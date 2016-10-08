@@ -11,7 +11,8 @@ from picamera import PiCamera
 
 DISPLAY = pi3d.Display.create(x=20, y=20, background=(0.0,0.0,0.0,0.0), layer=3)
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
-
+piCamera = PiCamera()
+piCamera.start_preview()
 # Shaders
 shader = pi3d.Shader("uv_light")
 shinesh = pi3d.Shader("uv_reflect")
@@ -48,5 +49,6 @@ while DISPLAY.loop_running():
 	k = mykeys.read()
 	if k == 27:
 		mykeys.close()
+		piCamera.stop_preview()
 		DISPLAY.destroy()
 		break
