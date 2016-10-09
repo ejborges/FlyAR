@@ -9,8 +9,10 @@ memory = sysv_ipc.SharedMemory(123456)
 memory_value = memory.read()
 
 # Find the 'end' of the string and strip
-#i = memory_value.find('\0')
-#if i != -1:
-#	memory_value = memory_value[:i]
+i = memory_value.find(b'\0')
+if i != -1:
+	memory_value = memory_value[:i]
 
-print(memory_value)
+value_as_string = memory_value.decode("utf-8")
+
+print(value_as_string)
