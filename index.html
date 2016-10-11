@@ -19,7 +19,14 @@
     </section>
 
     <section class="main-content">
-      <p>// TODO</p>
+      <h1>Recent Updates</h1>
+      <ul>
+      {% for post in site.posts %}
+      <li>
+        {% post.title %}
+      </li>
+      {% endfor %}
+      </ul>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/mike-koch/FlyAR">FlyAR</a> is maintained by <a href="https://github.com/mike-koch">mike-koch</a>.</span>
