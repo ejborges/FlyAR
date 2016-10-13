@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from __future__ import absolute_import, division, print_function, unicode_literals
+from sense_hat import SenseHat
 
 """ Some
 multiline
@@ -9,8 +10,12 @@ comment
 import pi3d
 from picamera import PiCamera
 
+sense = SenseHat()
+sense.clear()
 DISPLAY = pi3d.Display.create(x=20, y=20, background=(0.0,0.0,0.0,0.0), layer=3)
-CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
+
+ORIGINAL_CAMERA_ALTITUDE = 0
+CAMERA = pi3d.Camera(at=(0, ORIGINAL_CAMERA_ALTITUDE, 10), eye=(0, ORIGINAL_CAMERA_ALTITUDE, 0))
 piCamera = PiCamera()
 piCamera.start_preview()
 # Shaders
@@ -35,20 +40,34 @@ mystring.set_shader(flatsh)
 
 # Fetch key presses
 mykeys = pi3d.Keyboard()
-angl = 0
+
+orientation = sense.get_orientation_degrees()
+ORIGINAL_YAW = orientation['yaw']
+ORIGINAL_PITCH = orientation['pitch']
+ORIGINAL_ROLL = orientation['roll']
+ORIGINAL_PRESSURE = sense.get_pressure()
 
 while DISPLAY.loop_running():
-	CAMERA.reset()
-	cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
-	
-	mystring.draw()
+    CAMERA.reset()
+    cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
+    pressure = sense.get_pressure()
+    #mystring = pi3d.String(font=arialFont, string='%.2f' % pressure, z=9)
+    #mystring.set_shader(flatsh)
+    #print(str(pressure))
+    mystring.draw()
 
-	CAMERA.rotateY(angl)
-	angl += .05
+    orientation = sense.get_orientation_degrees()
+    CAMERA.rotateY(ORIGINAL_YAW - orientation['yaw'])
+    CAMERA.rotateX(ORIGINAL_PITCH - orientation['pitch'])
+    CAMERA.rotateZ(ORIGINAL_ROLL - orientation['roll'])
 
-	k = mykeys.read()
-	if k == 27:
-		mykeys.close()
-		piCamera.stop_preview()
-		DISPLAY.destroy()
-		break
+    # Updating the position of the object based on the pressure
+    #CAMERA.position(pt=(0, (ORIGINAL_PRESSURE - sense.get_pressure()) * 100, 0))
+    
+    k = mykeys.read()
+    
+    if k == 27:
+        mykeys.close()
+        piCamera.stop_preview()
+        DISPLAY.destroy()
+        break
