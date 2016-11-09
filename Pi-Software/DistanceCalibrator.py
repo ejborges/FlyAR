@@ -2,14 +2,14 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import pi3d
-#from picamera import PiCamera
+from picamera import PiCamera
 
-DISPLAY = pi3d.Display.create(x=20, y=20, background=(0.0,0.0,0.0,0.0), layer=3)
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,0.0,0.0,0.0), layer=3)
 
 CAMERA = pi3d.Camera(at=(0, 0, 1), eye=(0, 0, 0))
 TEXT_CAMERA = pi3d.Camera(is_3d=False)
-#piCamera = PiCamera()
-#piCamera.start_preview()
+piCamera = PiCamera()
+piCamera.start_preview()
 # Shaders
 shader = pi3d.Shader("uv_light")
 shinesh = pi3d.Shader("uv_reflect")
@@ -23,7 +23,8 @@ shapshine = pi3d.Texture("textures/stars.jpg")
 light = pi3d.Light(lightpos=(-1.0, 0.0, 10.0), lightcol=(3.0, 3.0, 2.0), lightamb=(0.02, 0.01, 0.03), is_point=True)
 
 # Create shape
-cylinder = pi3d.Cylinder(radius=0.7, height=1.5, sides=24, name="Cylinder", x=0, y=0, z=5)
+cylinder = pi3d.EnvironmentCube(light=light, size=1, name="Cylinder", x=0, y=0, z=5)
+cylinder.set_line_width(2)
 
 # Text
 arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
@@ -34,7 +35,8 @@ mykeys = pi3d.Keyboard()
 scale = 1
 lastKeyRead = -1
 while DISPLAY.loop_running():
-    mystring = pi3d.FixedString("fonts/FreeMonoBoldOblique.ttf", "Delta: {}, Last Key: {}".format(delta, lastKeyRead), camera=TEXT_CAMERA, background_color=(0,0,0,0), shader=flatsh, f_type='SMOOTH')
+    displayString = "Delta: {}, X: {}, Y:{}, Z: {}".format(delta, cylinder.x(), cylinder.y(), cylinder.z())
+    mystring = pi3d.FixedString("fonts/FreeMonoBoldOblique.ttf", displayString, camera=TEXT_CAMERA, color=(255,255,255,255), font_size=24, margin=0.0, justify='R', background_color=(0,0,0,255), shader=flatsh, f_type='SMOOTH')
     CAMERA.reset()
     cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
 
@@ -86,6 +88,15 @@ while DISPLAY.loop_running():
     elif k == 54:
         # 6 key pressed
         delta = 0.025
+    elif k == 55:
+        # 7 key pressed
+        delta = 0.001
+    elif k == 56:
+        # 8 key pressed
+        delta = 0.0005
+    elif k == 57:
+        # 9 key pressed
+        delta = 0.00025
     elif k == 259:
         # Up arrow pressed
         scale += delta
@@ -105,6 +116,6 @@ while DISPLAY.loop_running():
     elif k == 27:
         # Escape pressed
         mykeys.close()
-        #piCamera.stop_preview()
+        piCamera.stop_preview()
         DISPLAY.destroy()
         break
