@@ -1,12 +1,6 @@
 #!/usr/bin/python
 from __future__ import absolute_import, division, print_function, unicode_literals
 from sense_hat import SenseHat
-
-""" Some
-multiline
-comment
-"""
-
 import pi3d
 from picamera import PiCamera
 
