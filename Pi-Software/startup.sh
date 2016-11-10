@@ -1,5 +1,6 @@
 #!/bin/bash
 # Launch a splash screen giving the user 10 seconds to cancel the startup sequence
+clear
 printf "                   ______     ___   ___ \n"
 printf "                  / __/ /_ __/ _ | / _ \\n"
 printf "                 / _// / // / __ |/ , _/\n"
