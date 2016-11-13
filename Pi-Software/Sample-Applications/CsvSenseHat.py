@@ -5,14 +5,13 @@ sense.clear()
 
 print("COLLECTING DATA. PRESS CTRL+C TO EXIT")
 with open('pi_at_rest.csv', 'wb') as f:
-    header = b'accelX,accelY,accelZ,pressure'
+    header = b'pitch,roll,yaw'
     f.write(header + b'\n')
-    row = '{},{},{},{}'
+    row = '{},{},{}'
 
     while (True):
-        pressure = sense.get_pressure()
-        accel = sense.get_accelerometer_raw()
+        orien = sense.get_orientation()
 
-        textToWrite = row.format(accel['x'], accel['y'], accel['z'], pressure)
+        textToWrite = row.format(orien['pitch'], orien['roll'], orien['yaw'])
         f.write(str.encode(textToWrite))
         f.write(b'\n')
