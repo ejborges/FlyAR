@@ -19,9 +19,9 @@ printf " | |    | | |_| |/ ____ \| | \ \ \n"
 printf " |_|    |_|\__, /_/    \_\_|  \_\\n"
 printf "            __/ |                \n"
 printf "           |___/                 \n"
-printf "FlyAR Starting Up. Press Ctrl-C within 10 seconds to abort.\n"
+printf "FlyAR Starting Up. Press Ctrl-C within 3 seconds to abort.\n"
 
-sleep 10
+sleep 3
 
 # Start the sensor reading application in the background
 python3 SerialSample.py &
