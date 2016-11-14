@@ -11,8 +11,8 @@ FlyAR::FlyAR(QWidget *parent) :
     outFileName = "C:/test1/Data.txt";
     objHeight = 1;
     objType = 1;
-    xRadius = 20;
-    yRadius = 20;
+    xRadius = 20.0f;
+    yRadius = 20.0f;
 }
 
 bool FlyAR::openImage(const QString &fileName)
@@ -90,13 +90,15 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                     if (yrad)
                     {
                         drawLineTo(event->pos());
-                        output += QString::number(objType) + ", "                           //type
-                                + QString::number(myPenColor.rgb() & 0x00FFFFFF) + ", "     //color int -> hex (#00RRGGBB)
-                                + QString::number((float)(250-lastPoint.x())/50.0f) + ", "  //x-coordinate
-                                + QString::number((float)(500-lastPoint.y())/50.0f) + ", "  //y-coordinate
-                                + QString::number((float)objHeight) + ", "                  //z-coordinate
-                                + QString::number((float)xRadius) + ", "                    //x radius
-                                + QString::number((float)yRadius)                           //y radius
+                        output += QString::number(objType) + ", "                                           //type
+                                + QString::number((myPenColor.rgb() >> 16) & 0xFF) + ", "                   //redVal
+                                + QString::number((myPenColor.rgb() >> 8) & 0xFF) + ", "                    //greenVal
+                                + QString::number(myPenColor.rgb() & 0xFF) + ", "                           //blueVal
+                                + QString::number((float)(lastPoint.x()-250+(xRadius/2.0f))/50.0f) + ", "   //x-coordinate
+                                + QString::number((float)(500-lastPoint.y()+(yRadius/2.0f))/50.0f) + ", "   //y-coordinate
+                                + QString::number((float)objHeight) + ", "                                  //z-coordinate
+                                + QString::number((float)xRadius) + ", "                                    //x radius
+                                + QString::number((float)yRadius)                                           //y radius
                                 + "\n";
                         writeToFile(output);
                     }

@@ -44,8 +44,8 @@ private:
     int myPenWidth;
     int objHeight;
     int objType;
-    int xRadius;
-    int yRadius;
+    float xRadius;
+    float yRadius;
     QColor myPenColor;
     QImage image;
     QPoint lastPoint;
