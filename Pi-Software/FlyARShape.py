@@ -1,5 +1,5 @@
 # An actual shape object to be used by the 3D rendering script. Contains all necessary information
-class FlyARShape():
+class FlyARShape(object):
     def __init__(self):
         self._shapeType = None
         self._color = None
@@ -32,7 +32,7 @@ class FlyARShape():
 
     @property
     def radii(self):
-        return self._xRadius
+        return self._radii
 
     @radii.setter
     def radii(self, value):
