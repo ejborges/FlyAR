@@ -8,8 +8,9 @@ FlyAR::FlyAR(QWidget *parent) :
     scribbling = false;
     myPenWidth = 3;
     myPenColor = Qt::blue;
-    outFileName = "C:/test1/Data.txt";
-    objHeight = 1;
+    outFileName = "../TestData/Data.txt";
+    objCount = 0;
+    objHeight = 1.0f;
     objType = 1;
     xRadius = 20.0f;
     yRadius = 20.0f;
@@ -74,7 +75,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
             objHeight = QInputDialog::getInt(this, tr("FlyAR"),
                                                 tr("Give the object a height:"),
                                                 objHeight,
-                                                1, 15, 1, &ok);
+                                                1.0f, 15.0f, 1.0f, &ok);
             if (ok)
             {
                 xRadius = QInputDialog::getInt(this, tr("FlyAR"),
@@ -90,17 +91,21 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                     if (yrad)
                     {
                         drawLineTo(event->pos());
-                        output += QString::number(objType) + ", "                                           //type
-                                + QString::number((myPenColor.rgb() >> 16) & 0xFF) + ", "                   //redVal
-                                + QString::number((myPenColor.rgb() >> 8) & 0xFF) + ", "                    //greenVal
-                                + QString::number(myPenColor.rgb() & 0xFF) + ", "                           //blueVal
-                                + QString::number((float)(lastPoint.x()-250+(xRadius/2.0f))/50.0f) + ", "   //x-coordinate
-                                + QString::number((float)(500-lastPoint.y()+(yRadius/2.0f))/50.0f) + ", "   //y-coordinate
-                                + QString::number((float)objHeight) + ", "                                  //z-coordinate
-                                + QString::number((float)xRadius) + ", "                                    //x radius
-                                + QString::number((float)yRadius)                                           //y radius
-                                + "\n";
-                        writeToFile(output);
+
+                        objVec.push_back(obj());
+
+                        objVec[objCount].type = objType;
+                        objVec[objCount].r = (myPenColor.rgb() >> 16) & 0xFF;
+                        objVec[objCount].g = (myPenColor.rgb() >> 8) & 0xFF;
+                        objVec[objCount].b = (myPenColor.rgb()) & 0xFF;
+                        objVec[objCount].x = (lastPoint.x()-250+(xRadius/2.0f))/50.0f;
+                        objVec[objCount].y = (500-lastPoint.y()+(yRadius/2.0f))/50.0f;
+                        objVec[objCount].z = objHeight;
+                        objVec[objCount].xRad = (xRadius/50.0f);
+                        objVec[objCount].yRad = (yRadius/50.0f);
+                        objCount++; //Increment the count of total objects
+
+                        writeToFile();
                     }
                 }
             }
@@ -159,7 +164,7 @@ void FlyAR::drawLineTo(const QPoint &endPoint)
 
 }
 
-void FlyAR::writeToFile(QString output)
+void FlyAR::writeToFile()
 {
 
     QFile file(outFileName);
@@ -169,7 +174,20 @@ void FlyAR::writeToFile(QString output)
     }
     QTextStream out(&file);
 
-    out << output;
+    for (vector<obj>::iterator it = objVec.begin(); it != objVec.end(); ++it)
+    {
+        out << QString::number(it->type) + ", ";
+        out << QString::number(it->r) + ", ";
+        out << QString::number(it->g) + ", ";
+        out << QString::number(it->b) + ", ";
+        out << QString::number(it->x) + ", ";
+        out << QString::number(it->y) + ", ";
+        out << QString::number(it->z) + ", ";
+        out << QString::number(it->xRad) + ", ";
+        out << QString::number(it->yRad) + "\n";
+    }
+
+
     file.close();
 }
 

@@ -8,12 +8,24 @@
 #include <QPoint>
 #include <QFile>
 #include <QTextStream>
+#include <vector>
+
+using namespace std;
 
 class FlyAR : public QWidget
 {
     Q_OBJECT
 public:
     FlyAR(QWidget *parent = 0);
+
+    struct obj {
+        int type;
+        int r, g, b;
+        float x, y, z;
+        float xRad, yRad;
+    };
+
+    vector<obj> objVec;
 
     bool openImage(const QString &fileName);
     bool saveImage(const QString &fileName, const char *fileFormat);
@@ -37,13 +49,14 @@ protected:
 private:
     void drawLineTo(const QPoint &endPoint);
     void resizeImage(QImage *image, const QSize &newSize);
-    void writeToFile(QString objectInfo);
+    void writeToFile();
 
     bool modified;
     bool scribbling;
     int myPenWidth;
-    int objHeight;
+    int objCount;
     int objType;
+    float objHeight;
     float xRadius;
     float yRadius;
     QColor myPenColor;
