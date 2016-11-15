@@ -1,6 +1,9 @@
 ## More gitignore templates
 ## https://github.com/github/gitignore
 
+CMakeLists.txt
+
+
 # Prerequisites
 *.d
 
