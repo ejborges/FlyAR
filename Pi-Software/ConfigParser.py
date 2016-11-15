@@ -3,12 +3,14 @@ from FlyARShape import FlyARShape
 
 def read_config():
     filePath = '/boot/FlyAR/config.txt'
+
+    shapes = []
     with open(filePath, 'r') as ins:
         for line in ins:
             # Parse the line, and create a FlyARShape for the main FlyAR application
             pieces = line.strip().split(',')
 
-            shapeType = pieces[0]
+            shapeType = int(pieces[0])
             red = int(pieces[1])
             green = int(pieces[2])
             blue = int(pieces[3])
@@ -23,9 +25,11 @@ def read_config():
 
             # Store the shape
             shape = FlyARShape()
-            shape.shapeType = pieces[0]
+            shape.shapeType = shapeType
             shape.color = color
             shape.position = position
             shape.radii = radii
-            
-            return shape
+
+            shapes.append(shape)
+
+    return shapes

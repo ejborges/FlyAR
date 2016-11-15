@@ -3,34 +3,42 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from sense_hat import SenseHat
 import pi3d
 from picamera import PiCamera
+from ConfigParser import read_config
 
+# TODO Replace this with a wrapper interface so we can quickly switch from SenseHAT to Emu's sensors
 sense = SenseHat()
 sense.clear()
 DISPLAY = pi3d.Display.create(x=20, y=20, background=(0.0,0.0,0.0,0.0), layer=3)
 
+shapesToDraw = read_config()
 ORIGINAL_CAMERA_ALTITUDE = 0
-CAMERA = pi3d.Camera(at=(0, ORIGINAL_CAMERA_ALTITUDE, 10), eye=(0, ORIGINAL_CAMERA_ALTITUDE, 0))
+CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
 piCamera = PiCamera()
 piCamera.start_preview()
 # Shaders
-shader = pi3d.Shader("uv_light")
-shinesh = pi3d.Shader("uv_reflect")
-flatsh = pi3d.Shader("uv_flat")
-matsh = pi3d.Shader("mat_reflect")
+#shader = pi3d.Shader("uv_light")
+#shinesh = pi3d.Shader("uv_reflect")
+#flatsh = pi3d.Shader("uv_flat")
+#matsh = pi3d.Shader("mat_reflect")
 #################################
 # Textures
-patimg = pi3d.Texture("textures/PATRN.PNG")
-shapebump = pi3d.Texture("textures/floor_nm.jpg")
-shapshine = pi3d.Texture("textures/stars.jpg")
-light = pi3d.Light(lightpos=(-1.0, 0.0, 10.0), lightcol=(3.0, 3.0, 2.0), lightamb=(0.02, 0.01, 0.03), is_point=True)
+#patimg = pi3d.Texture("textures/PATRN.PNG")
+#shapebump = pi3d.Texture("textures/floor_nm.jpg")
+#shapshine = pi3d.Texture("textures/stars.jpg")
+#light = pi3d.Light(lightpos=(-1.0, 0.0, 10.0), lightcol=(3.0, 3.0, 2.0), lightamb=(0.02, 0.01, 0.03), is_point=True)
 
-# Create shape
-cylinder = pi3d.Cylinder(radius=0.7, height=1.5, sides=24, name="Cylinder", x=0, y=0, z=10)
+# Create pi3d shapes based on the config information
+pi3dShapes = []
+for shape in shapesToDraw:
+    ringRots = 4 if shape.shapeType == 1 else 12
+    newShape = pi3d.Torus(radius=shape.radii[0], ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.1)
+    newShape.set_material((shape.color[0], shape.color[1], shape.color[2]))
+    pi3dShapes.append(newShape)
 
-# Text
-arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
-mystring = pi3d.String(font=arialFont, string="Something", z=4)
-mystring.set_shader(flatsh)
+# Text - Sample
+#arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
+#mystring = pi3d.String(font=arialFont, string="Something", z=4)
+##mystring.set_shader(flatsh)
 
 # Fetch key presses
 mykeys = pi3d.Keyboard()
@@ -43,12 +51,10 @@ ORIGINAL_PRESSURE = sense.get_pressure()
 
 while DISPLAY.loop_running():
     CAMERA.reset()
-    cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
-    pressure = sense.get_pressure()
-    #mystring = pi3d.String(font=arialFont, string='%.2f' % pressure, z=9)
-    #mystring.set_shader(flatsh)
-    #print(str(pressure))
-    mystring.draw()
+    for shape in pi3dShapes:
+        shape.draw()
+    #cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
+    #mystring.draw()
 
     orientation = sense.get_orientation_degrees()
     CAMERA.rotateY(ORIGINAL_YAW - orientation['yaw'])
@@ -56,7 +62,6 @@ while DISPLAY.loop_running():
     CAMERA.rotateZ(ORIGINAL_ROLL - orientation['roll'])
 
     # Updating the position of the object based on the pressure
-    #CAMERA.position(pt=(0, (ORIGINAL_PRESSURE - sense.get_pressure()) * 100, 0))
     
     k = mykeys.read()
     
