@@ -17,7 +17,12 @@ MainWindow::MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    event->accept(); //actually close the application
+    if (maybeSave()) {
+        event->accept();//actually close the application
+    } else {
+        event->ignore();
+    }
+
 }
 
 void MainWindow::open()
@@ -115,8 +120,8 @@ void MainWindow::createMenus()
 
     fileMenu = new QMenu(tr("&File"), this);
     fileMenu->addAction(openAct);
-//    fileMenu->addMenu(saveAsMenu);
-//    fileMenu->addSeparator();
+    fileMenu->addMenu(saveAsMenu);
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
     optionMenu = new QMenu(tr("&Options"), this);
@@ -136,36 +141,34 @@ void MainWindow::createMenus()
 
 bool MainWindow::maybeSave()
 {
-//    if (FlyAR->isModified()) {
-//       QMessageBox::StandardButton ret;
-//       ret = QMessageBox::warning(this, tr("FlyAR"),
-//                          tr("The image has been modified.\n"
-//                             "Do you want to save your changes?"),
-//                          QMessageBox::Save | QMessageBox::Discard
-//                          | QMessageBox::Cancel);
-//        if (ret == QMessageBox::Save) {
-//            return saveFile("png");
-//        } else if (ret == QMessageBox::Cancel) {
-//            return false;
-//        }
-//    }
-//    return true;
-    return false;
+    if (flyAR->isModified()) {
+       QMessageBox::StandardButton ret;
+       ret = QMessageBox::warning(this, tr("FlyAR"),
+                          tr("The image has been modified.\n"
+                             "Do you want to save your changes?"),
+                          QMessageBox::Save | QMessageBox::Discard
+                          | QMessageBox::Cancel);
+        if (ret == QMessageBox::Save) {
+            return saveFile("png");
+        } else if (ret == QMessageBox::Cancel) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool MainWindow::saveFile(const QByteArray &fileFormat)
 {
     QString initialPath = QDir::currentPath() + "/untitled." + fileFormat;
 
-//    QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"),
-//                               initialPath,
-//                               tr("%1 Files (*.%2);;All Files (*)")
-//                               .arg(QString::fromLatin1(fileFormat.toUpper()))
-//                               .arg(QString::fromLatin1(fileFormat)));
-//    if (fileName.isEmpty()) {
-//        return false;
-//    } else {
-//        return flyAR->saveImage(fileName, fileFormat.constData());
-//    }
-    return false;
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"),
+                               initialPath,
+                               tr("%1 Files (*.%2);;All Files (*)")
+                               .arg(QString::fromLatin1(fileFormat.toUpper()))
+                               .arg(QString::fromLatin1(fileFormat)));
+    if (fileName.isEmpty()) {
+        return false;
+    } else {
+        return flyAR->saveImage(fileName, fileFormat.constData());
+    }
 }

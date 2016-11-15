@@ -47,7 +47,7 @@ protected:
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
 
 private:
-    void drawLineTo(const QPoint &endPoint);
+    void drawObj(const QPoint &endPoint);
     void resizeImage(QImage *image, const QSize &newSize);
     void writeToFile();
 

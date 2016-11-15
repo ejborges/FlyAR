@@ -37,6 +37,7 @@ bool FlyAR::saveImage(const QString &fileName, const char *fileFormat)
 
     if (visibleImage.save(fileName, fileFormat)) {
         modified = false;
+        writeToFile(); //write to the file when saves
         return true;
     } else {
         return false;
@@ -92,7 +93,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                                                         10, 50, 2, &yrad);
                     if (yrad)
                     {
-                        drawLineTo(event->pos());
+                        drawObj(event->pos());
 
                         objVec.push_back(obj());
 
@@ -106,6 +107,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                         objVec[objCount].xRad = (xRadius/50.0f);
                         objVec[objCount].yRad = (yRadius/50.0f);
                         objCount++; //Increment the count of total objects
+                        modified = true;
                     }
                 }
             }
@@ -141,7 +143,7 @@ void FlyAR::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-void FlyAR::drawLineTo(const QPoint &endPoint)
+void FlyAR::drawObj(const QPoint &endPoint)
 {
     QPainter painter(&image);
         painter.setPen(QPen(myPenColor, myPenWidth, Qt::SolidLine, Qt::RoundCap,
