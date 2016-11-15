@@ -17,6 +17,14 @@
 //      2012-06-01 - fixed gyro sensitivity to be 2000 deg/sec instead of 250
 //      2012-05-30 - basic DMP initialization working
 
+// I2C device class (I2Cdev) demonstration Arduino sketch for HMC5883L class
+// 10/7/2011 by Jeff Rowberg <jeff@rowberg.net>
+// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
+//
+// Changelog:
+//     2013-05-04 - Added Heading Calculation in degrees
+//     2011-10-07 - initial release
+
 /* ============================================
 I2Cdev device library code is placed under the MIT license
 Copyright (c) 2012 Jeff Rowberg
@@ -41,12 +49,14 @@ THE SOFTWARE.
 ===============================================
 */
 
-// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
+// I2Cdev, MPU6050, and HMC5883L must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
 
 #include "MPU6050_6Axis_MotionApps20.h"
 //#include "MPU6050.h" // not necessary if using MotionApps include file
+
+#include "HMC5883L.h"
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -60,6 +70,11 @@ THE SOFTWARE.
 // AD0 high = 0x69
 MPU6050 mpu;
 //MPU6050 mpu(0x69); // <-- use for AD0 high
+
+// class default I2C address is 0x1E
+// specific I2C addresses may be passed as a parameter here
+// this device only supports one I2C address (0x1E)
+HMC5883L mag;
 
 /* =========================================================================
    NOTE: In addition to connection 3.3v, GND, SDA, and SCL, this sketch
@@ -130,6 +145,9 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
+// HMC5883L magnetometer raw heading variables for x,y,z
+int16_t mx, my, mz;
+
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
@@ -183,11 +201,13 @@ void setup() {
     // initialize device
     Serial.println(F("Initializing I2C devices..."));
     mpu.initialize();
+    mag.initialize();
     pinMode(INTERRUPT_PIN, INPUT);
 
     // verify connection
     Serial.println(F("Testing device connections..."));
     Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+    Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
 
     // wait for ready
     Serial.println(F("\nSend any character to begin DMP programming and demo: "));
@@ -259,6 +279,11 @@ void loop() {
         // .
         // .
         // .
+
+        // read raw heading measurements from device
+        mag.getHeading(&mx, &my, &mz);
+
+        
     }
 
     // reset interrupt flag and get INT_STATUS byte
@@ -286,6 +311,16 @@ void loop() {
         // (this lets us immediately read more without waiting for an interrupt)
         fifoCount -= packetSize;
 
+        // to view serial on osx terminal, type "screen /dev/cu.usbmodem411 9600" 
+        // check usbmodemXXX has the right port number
+        // to exit screen, do CTRL-A CTRL-\ 
+
+        //http://stackoverflow.com/a/15559322
+        Serial.write(27);          // ESC command
+        Serial.print(F("[2J"));    // clear screen command
+        Serial.write(27);
+        Serial.print(F("[H"));     // cursor to home command
+
         #ifdef OUTPUT_READABLE_QUATERNION
             // display quaternion values in easy matrix form: w x y z
             mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -312,7 +347,7 @@ void loop() {
         #endif
 
         #ifdef OUTPUT_READABLE_YAWPITCHROLL
-            // display Euler angles in degrees
+            // display yaw,pitch,roll angles in degrees
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
@@ -367,6 +402,21 @@ void loop() {
             Serial.write(teapotPacket, 14);
             teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
         #endif
+
+        // display tab-separated magnetometer x/y/z values
+        Serial.print("mag:\t");
+        Serial.print(mx);
+        Serial.print("\t");
+        Serial.print(my);
+        Serial.print("\t");
+        Serial.println(mz);
+
+        // calculate heading in degrees. 0 degree indicates North
+        float heading = atan2(my, mx);
+        if(heading < 0)
+          heading += 2 * M_PI;
+        Serial.print("heading:\t");
+        Serial.println(heading * 180/M_PI);
 
         // blink LED to indicate activity
         blinkState = !blinkState;

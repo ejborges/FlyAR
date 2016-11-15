@@ -43,7 +43,7 @@
 void setup() {
   
   #ifdef serial_out
-    Serial.begin(9600);
+    Serial.begin(115200);
   #endif
 
   //enable interrupt INT2 (pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
@@ -56,8 +56,11 @@ void setup() {
 
 
   Wire.begin(); // join i2c bus
+  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
-  char i2c_buffer[2];  // to hold 2 bytes, 1 byte for register address and 1 byte for register value
+  #ifdef serial_out
+    Serial.println(F("Initializing I2C devices..."));
+  #endif
 
   // --------------------------------------------------------
   // configure the MPU6050 (gyro/accelerometer)
@@ -65,11 +68,8 @@ void setup() {
   Wire.beginTransmission(MPU6050_ADDRESS);
   //
   // exit sleep
-  i2c_buffer[0] = MPU6050_PWR_MGMT_1;
-  i2c_buffer[1] = 0;
-  Wire.write(i2c_buffer, 2);        // queue register address and value
-  //Wire.write(MPU6050_PWR_MGMT_1);   // queue register address
-  //Wire.write(0);                    // queue register value
+  Wire.write(MPU6050_PWR_MGMT_1);   // queue register address
+  Wire.write(0);                    // queue register value
   Wire.endTransmission(false);      // transmit/write to register and keep connection open
   //
   // gyro sample rate = 8kHz / (1 + 7) = 1kHz; same as accelerometer sample rate
