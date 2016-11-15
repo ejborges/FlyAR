@@ -56,6 +56,8 @@ void FlyAR::setPenWidth(int newWidth)
 void FlyAR::clearImage()
 {
     image.fill(qRgb(255, 255, 255));
+    objCount = 0; //reset the counter
+    objVec.clear(); //empty the vector
     modified = true;
     update();
 }
@@ -104,8 +106,6 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                         objVec[objCount].xRad = (xRadius/50.0f);
                         objVec[objCount].yRad = (yRadius/50.0f);
                         objCount++; //Increment the count of total objects
-
-                        writeToFile();
                     }
                 }
             }
