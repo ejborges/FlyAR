@@ -8,7 +8,6 @@ FlyAR::FlyAR(QWidget *parent) :
     scribbling = false;
     myPenWidth = 3;
     myPenColor = Qt::blue;
-    outFileName = "../TestData/Data.txt";
     objCount = 0;
     objHeight = 1.0f;
     objType = 1;
@@ -32,16 +31,9 @@ bool FlyAR::openImage(const QString &fileName)
 
 bool FlyAR::saveImage(const QString &fileName, const char *fileFormat)
 {
-    QImage visibleImage = image;
-    resizeImage(&visibleImage, size());
-
-    if (visibleImage.save(fileName, fileFormat)) {
-        modified = false;
-        writeToFile(); //write to the file when saves
-        return true;
-    } else {
-        return false;
-    }
+    modified = false;
+    writeToFile(fileName); //write to the file when saves
+    return true;
 }
 
 void FlyAR::setPenColor(const QColor &newColor)
@@ -101,8 +93,8 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                         objVec[objCount].r = (myPenColor.rgb() >> 16) & 0xFF;
                         objVec[objCount].g = (myPenColor.rgb() >> 8) & 0xFF;
                         objVec[objCount].b = (myPenColor.rgb()) & 0xFF;
-                        objVec[objCount].x = (lastPoint.x()-250+(xRadius/2.0f))/50.0f;
-                        objVec[objCount].y = (500-lastPoint.y()+(yRadius/2.0f))/50.0f;
+                        objVec[objCount].x = (lastPoint.x()-375+(xRadius/2.0f))/75.0f;
+                        objVec[objCount].y = (750-lastPoint.y()+(yRadius/2.0f))/75.0f;
                         objVec[objCount].z = objHeight;
                         objVec[objCount].xRad = (xRadius/50.0f);
                         objVec[objCount].yRad = (yRadius/50.0f);
@@ -166,10 +158,10 @@ void FlyAR::drawObj(const QPoint &endPoint)
 
 }
 
-void FlyAR::writeToFile()
+void FlyAR::writeToFile(QString theFileName)
 {
 
-    QFile file(outFileName);
+    QFile file(theFileName);
     if (!file.isOpen())
     {
         file.open(QIODevice::WriteOnly | QIODevice::Text);

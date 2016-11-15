@@ -49,7 +49,7 @@ protected:
 private:
     void drawObj(const QPoint &endPoint);
     void resizeImage(QImage *image, const QSize &newSize);
-    void writeToFile();
+    void writeToFile(QString theFileName);
 
     bool modified;
     bool scribbling;
