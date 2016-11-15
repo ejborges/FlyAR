@@ -52,7 +52,7 @@ void setup() {
 
   //enable interrupt INT3 (pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
   //jump to the MS5611_ISR function on rising edge
-  attachInterrupt(1, MS5611_ISR, RISING);
+  attachInterrupt(1, MS5611_ISR, FALLING);
 
 
   Wire.begin(); // join i2c bus
@@ -107,7 +107,7 @@ void setup() {
   //
   Wire.beginTransmission(HMC5883L_ADDRESS);
   //
-  // sample rate = 
+  // sample rate = 75Hz
   Wire.write(HMC5883L_CONFIG_A);
   Wire.write(0x18);
   Wire.endTransmission(false);
@@ -141,17 +141,38 @@ void setup() {
   Wire.write(MPU6050_I2C_SLV0_ADDR);
   Wire.write(HMC5883L_ADDRESS | 0x80);
   Wire.endTransmission(false);
+  //
+  // slave 0 first data register = 0x03 (x axis)
+  Wire.write(MPU6050_I2C_SLV0_REG);
+  Wire.write(0x03);
+  Wire.endTransmission(false);
+  //
+  // slave 0 transfer size = 6 bytes, enabled data transaction
+  Wire.write(MPU6050_I2C_SLV0_CTRL);
+  Wire.write(6 | 0x80);
+  Wire.endTransmission(false);
+  //
+  // enable slave 0 delay until all data received
+  Wire.write(MPU6050_I2C_MST_DELAY_CTRL);
+  Wire.write(1);
+  Wire.endTransmission(true);
 
-
-  
-//  i2c_write_register(I2C1, MPU6050_ADDRESS,  0x25, HMC5883L_ADDRESS | 0x80); // slave 0 i2c address, read mode
-//  i2c_write_register(I2C1, MPU6050_ADDRESS,  0x26, 0x03);                    // slave 0 register = 0x03 (x axis)
-//  i2c_write_register(I2C1, MPU6050_ADDRESS,  0x27, 6 | 0x80);                // slave 0 transfer size = 6, enabled
-//  i2c_write_register(I2C1, MPU6050_ADDRESS,  0x67, 1);                       // enable slave 0 delay
-
+  // --------------------------------------------------------
   // configure the MS5611 (barometer)
-//  i2c_write_register(I2C1, MS5611_ADDRESS,   0x1E, 0x00);                    // reset
-//  i2c_write_register(I2C1, MS5611_ADDRESS,   0x48, 0x00);                    // start conversion of the pressure sensor
+  //
+  /*
+  Wire.beginTransmission(MS5611_ADDRESS);
+  //
+  // reset
+  Wire.write(0x1E);
+  Wire.write(0);
+  Wire.endTransmission(false);
+  //
+  // start conversion of pressure sensor
+  Wire.write(0x48);
+  Wire.write(0);
+  Wire.endTransmission(true);
+  */
 }
 
 void loop() {
