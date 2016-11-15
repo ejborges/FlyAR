@@ -41,11 +41,33 @@
 
 #define serial_out
 
+#define MPU6050_INTERRUPT_PIN 0
+#define MS5611_INTERRUPT_PIN 1
+#define LED_PIN LED_BUILTIN
+bool blinkState = false;
+
 // class default I2C address is 0x68
 MPU6050 mpu;
 
 // class default I2C address is 0x1E
 HMC5883L mag;
+
+// uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
+// pitch/roll angles (in degrees) calculated from the quaternions coming
+// from the FIFO. Note this also requires gravity vector calculations.
+// Also note that yaw/pitch/roll angles suffer from gimbal lock (for
+// more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
+#define OUTPUT_READABLE_YAWPITCHROLL
+
+// uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
+// components with gravity removed and adjusted for the world frame of
+// reference (yaw is relative to initial orientation, since no magnetometer
+// is present in this case). Could be quite handy in some cases.
+#define OUTPUT_READABLE_WORLDACCEL
+
+#define OUTPUT_READABLE_MAGNETOMETER
+
+#define OUTPUT_READABLE_HEADING
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -61,8 +83,15 @@ VectorInt16 aa;         // [x, y, z]            accel sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
 VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            gravity vector
+int16_t gyro[3];        //To store gyro's measures
+int16_t mx, my, mz;     //To store magnetometer readings
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+float heading;          // Simple magnetic heading. (NOT COMPENSATED FOR PITCH AND ROLL)
+
+// To check DMP frecuency  (it can be changed it the MotionApps v2 .h file)
+int time1,time1old;
+float frec1;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
@@ -91,11 +120,10 @@ void setup() {
   #endif
   mpu.initialize();
 
-#ifdef serial_out
+  #ifdef serial_out
   // verify connection
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-  //Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
 
   // wait for ready
   Serial.println(F("\nSend any character to begin DMP programming: "));
@@ -104,7 +132,7 @@ void setup() {
   while (Serial.available() && Serial.read()); // empty buffer again
 
   Serial.println(F("Initializing DMP..."));
-#endif
+  #endif
 
   // load and configure the DMP
   devStatus = mpu.dmpInitialize();
@@ -120,13 +148,59 @@ void setup() {
   // Have to init mag here because dmpInit sets its own slave 0 params, we overwrite those params here
   mag.initialize();
 
-  //enable interrupt INT2 (pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
-  //jump to the dmpDataReady function on rising edge
-  attachInterrupt(0, dmpDataReady, RISING);
 
-  //enable interrupt INT3 (pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
-  //jump to the ms5611DataReady function on falling edge
-  attachInterrupt(1, ms5611DataReady, FALLING);
+// make sure it worked (returns 0 if so)
+  if (devStatus == 0) {
+    // turn on the DMP, now that it's ready
+    #ifdef serial_out
+    Serial.println(F("Enabling DMP..."));
+    #endif
+    mpu.setDMPEnabled(true);
+
+    // enable Arduino interrupt detection
+    #ifdef serial_out
+    Serial.println(F("Enabling interrupt detection..."));
+    #endif
+    //enable interrupt INT2 (physical pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
+    //jump to the dmpDataReady function on rising edge
+    attachInterrupt(MPU6050_INTERRUPT_PIN, dmpDataReady, RISING);
+
+    //enable interrupt INT3 (physical pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
+    //jump to the ms5611DataReady function on falling edge
+    attachInterrupt(MS5611_INTERRUPT_PIN, ms5611DataReady, FALLING);
+
+    mpuIntStatus = mpu.getIntStatus();
+
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    #ifdef serial_out
+    Serial.println(F("DMP ready! Waiting for first interrupt..."));
+    #endif
+    dmpReady = true;
+
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+  }
+  else {
+    // ERROR!
+    // 1 = initial memory load failed
+    // 2 = DMP configuration updates failed
+    // (if it's going to break, usually the code will be 1)
+    #ifdef serial_out
+    Serial.print(F("DMP Initialization failed (code "));
+    Serial.print(devStatus);
+    Serial.println(F(")"));
+    #endif
+  }
+
+  // configure LED for output
+  pinMode(LED_PIN, OUTPUT);
+
+
+
+
+
+
+
 
 
 
@@ -247,21 +321,164 @@ void setup() {
 }
 
 void loop() {
-  
+  // if programming failed, don't try to do anything
+  if (!dmpReady) return;
 
-  
-  // to view serial on osx terminal, type "screen /dev/cu.usbmodem411 9600" 
-  // check usbmodemXXX has the right port number
-  // to exit screen, do CTRL-A CTRL-\  
-  
-  #ifdef serial_out 
+  // wait for MPU interrupt or extra packet(s) available
+  while (!mpuInterrupt && fifoCount < packetSize) {
+    // other program behavior stuff here
+    // .
+    // .
+    // .
+    // if you are really paranoid you can frequently test in between other
+    // stuff to see if mpuInterrupt is true, and if so, "break;" from the
+    // while() loop to immediately process the MPU data
+    // .
+    // .
+    // .
+  }
+
+  // reset interrupt flag and get INT_STATUS byte
+  mpuInterrupt = false;
+  mpuIntStatus = mpu.getIntStatus();
+
+  // get current FIFO count
+  fifoCount = mpu.getFIFOCount();
+
+  // check for overflow (this should never happen unless our code is too inefficient)
+  if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+    // reset so we can continue cleanly
+    mpu.resetFIFO();
+    #ifdef serial_out
+    Serial.println(F("FIFO overflow!"));
+    #endif
+
+    // otherwise, check for DMP data ready interrupt (this should happen frequently)
+  }
+  else if (mpuIntStatus & 0x02) {
+    // wait for correct available data length, should be a VERY short wait
+    while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
+    // read a packet from FIFO
+    mpu.getFIFOBytes(fifoBuffer, packetSize);
+
+    // track FIFO count here in case there is > 1 packet available
+    // (this lets us immediately read more without waiting for an interrupt)
+    fifoCount -= packetSize;
+
+    // Check DMP frecuency
+    time1=micros()-time1old;
+    time1old=micros();
+    frec1=1000000/time1;
+
+
+
+    // to view serial on osx terminal, type "screen /dev/cu.usbmodem411 9600"
+    // check usbmodemXXX has the right port number
+    // to exit screen, do CTRL-A CTRL-\
+
+    #ifdef serial_out
     //Serial.print(F("someting"));
-    
+
     //http://stackoverflow.com/a/15559322
     Serial.write(27);          // ESC command
     Serial.print(F("[2J"));    // clear screen command
     Serial.write(27);
     Serial.print(F("[H"));     // cursor to home command
-  #endif
+
+    Serial.println("______\tx|y\ty|p\tz|r");
+    #endif
+
+
+    #ifdef OUTPUT_READABLE_YAWPITCHROLL
+    // display yaw,pitch,roll angles in degrees
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    #ifdef serial_out
+    Serial.print("ypr\t");
+    Serial.print(ypr[0] * 180/M_PI);
+    Serial.print("\t");
+    Serial.print(ypr[1] * 180/M_PI);
+    Serial.print("\t");
+    Serial.println(ypr[2] * 180/M_PI);
+    #endif //serial_out
+    #endif
+
+    #ifdef OUTPUT_READABLE_WORLDACCEL
+    // display initial world-frame acceleration, adjusted to remove gravity
+    // and rotated based on known orientation from quaternion
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetAccel(&aa, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+    #ifdef serial_out
+    Serial.print("acc:\t");
+    Serial.print(aaWorld.x);
+    Serial.print("\t");
+    Serial.print(aaWorld.y);
+    Serial.print("\t");
+    Serial.println(aaWorld.z);
+    #endif //serial_out
+    #endif
+
+    // Get and process information from DMP
+//    mpu.dmpGetQuaternion(&q, fifoBuffer);
+//    mpu.dmpGetGyro(gyro, fifoBuffer);
+//    //    mpu.dmpGetAccel(&aa, fifoBuffer);  //Use this if you want accelerometer measures
+//    mpu.dmpGetGravity(&gravity, &q);
+//    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+//    //    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);  //Use this to get linear acceleration apart from gravity.
+//    //    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);  //NOT RECOMMENDED. Gives you linear acceleration rotated to initial position.
+
+    #ifdef OUTPUT_READABLE_MAGNETOMETER
+    //Read magnetometer measures
+    mx=mpu.getExternalSensorWord(0);
+    my=mpu.getExternalSensorWord(2);
+    mz=mpu.getExternalSensorWord(4);
+    #ifdef serial_out
+    Serial.print("mag:\t");
+    Serial.print(mx);
+    Serial.print("\t");
+    Serial.print(my);
+    Serial.print("\t");
+    Serial.println(mz);
+    #endif //serial_out
+    #endif
+
+    #ifdef OUTPUT_READABLE_HEADING
+    //Read magnetometer measures
+    mx=mpu.getExternalSensorWord(0);
+    my=mpu.getExternalSensorWord(2);
+    mz=mpu.getExternalSensorWord(4);
+
+    // calculate heading in degrees. 0 degree indicates North
+    heading = atan2(my, mx);
+    if(heading < 0) heading += 2 * M_PI;
+
+    #ifdef serial_out
+    Serial.print("heading:\t");
+    Serial.println(heading * 180/M_PI);
+    #endif //serial_out
+    #endif
+
+    #ifdef serial_out
+    Serial.print("DMP Freq:\t");
+    Serial.println(frec1);
+    #endif
+    
+    // blink LED to indicate activity
+    blinkState = !blinkState;
+    digitalWrite(LED_PIN, blinkState);
+  }
+
+
+
+
+
+
+  
+
 
 }

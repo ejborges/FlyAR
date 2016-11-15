@@ -56,7 +56,7 @@ THE SOFTWARE.
 #include "MPU6050_6Axis_MotionApps20.h"
 //#include "MPU6050.h" // not necessary if using MotionApps include file
 
-#include "HMC5883L.h"
+//#include "HMC5883L.h"
 
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
@@ -74,7 +74,7 @@ MPU6050 mpu;
 // class default I2C address is 0x1E
 // specific I2C addresses may be passed as a parameter here
 // this device only supports one I2C address (0x1E)
-HMC5883L mag;
+//HMC5883L mag;
 
 /* =========================================================================
    NOTE: In addition to connection 3.3v, GND, SDA, and SCL, this sketch
@@ -146,7 +146,7 @@ uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
 // HMC5883L magnetometer raw heading variables for x,y,z
-int16_t mx, my, mz;
+//int16_t mx, my, mz;
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -201,13 +201,12 @@ void setup() {
     // initialize device
     Serial.println(F("Initializing I2C devices..."));
     mpu.initialize();
-    mag.initialize();
+    //mag.initialize();
     pinMode(INTERRUPT_PIN, INPUT);
 
     // verify connection
     Serial.println(F("Testing device connections..."));
     Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-    Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
 
     // wait for ready
     Serial.println(F("\nSend any character to begin DMP programming and demo: "));
@@ -281,7 +280,7 @@ void loop() {
         // .
 
         // read raw heading measurements from device
-        mag.getHeading(&mx, &my, &mz);
+        //mag.getHeading(&mx, &my, &mz);
 
         
     }
@@ -404,12 +403,12 @@ void loop() {
         #endif
 
         // display tab-separated magnetometer x/y/z values
-        Serial.print("mag:\t");
-        Serial.print(mx);
-        Serial.print("\t");
-        Serial.print(my);
-        Serial.print("\t");
-        Serial.println(mz);
+//        Serial.print("mag:\t");
+//        Serial.print(mx);
+//        Serial.print("\t");
+//        Serial.print(my);
+//        Serial.print("\t");
+//        Serial.println(mz);
 
         // calculate heading in degrees. 0 degree indicates North
         float heading = atan2(my, mx);

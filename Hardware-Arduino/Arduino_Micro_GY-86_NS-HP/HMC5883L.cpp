@@ -70,12 +70,13 @@ void HMC5883L::initialize() {
 
     // write CONFIG_A register
     I2Cdev::writeByte(devAddr, HMC5883L_RA_CONFIG_A,
-        (HMC5883L_AVERAGING_8 << (HMC5883L_CRA_AVERAGE_BIT - HMC5883L_CRA_AVERAGE_LENGTH + 1)) |
-        (HMC5883L_RATE_15     << (HMC5883L_CRA_RATE_BIT - HMC5883L_CRA_RATE_LENGTH + 1)) |
-        (HMC5883L_BIAS_NORMAL << (HMC5883L_CRA_BIAS_BIT - HMC5883L_CRA_BIAS_LENGTH + 1)));
+        (HMC5883L_AVERAGING_8 << (HMC5883L_CRA_AVERAGE_BIT - HMC5883L_CRA_AVERAGE_LENGTH + 1)) |// 8 samples averaged
+        (HMC5883L_RATE_75     << (HMC5883L_CRA_RATE_BIT - HMC5883L_CRA_RATE_LENGTH + 1)) |      // 75Hz Data output rate
+        (HMC5883L_BIAS_NORMAL << (HMC5883L_CRA_BIAS_BIT - HMC5883L_CRA_BIAS_LENGTH + 1)));      // normal meas. config.
 
     // write CONFIG_B register
-    setGain(HMC5883L_GAIN_1090);
+    setGain(HMC5883L_GAIN_1090); // Gain (LSb/Gauss) = 1090; resolution (mG/LSb) = 0.92;
+                                 // output range = 0xF800 - 0x07FF = -2048 to 2047
     
     // write MODE register
     setMode(HMC5883L_MODE_CONTINUOUS);
@@ -83,23 +84,40 @@ void HMC5883L::initialize() {
     // disable i2c master bypass mode
     MPU6050::setI2CBypassEnabled(false);
 
-    // enable MPU6050 i2c master mode
-    MPU6050::setI2CMasterModeEnabled(true);
+    // configure X axis word
+    MPU6050::setSlaveAddress(0, devAddr | 0x80); // set slave 0 i2c address, 0x80=read mode
+    MPU6050::setSlaveRegister(0, HMC5883L_RA_DATAX_H);// set slave 0 first data register, 0x03 (high byte of x axis)
+    MPU6050::setSlaveEnabled(0, true);// enable slave 0 data transfer
+    MPU6050::setSlaveWordByteSwap(0, false);
+    MPU6050::setSlaveWriteMode(0, false);
+    MPU6050::setSlaveWordGroupOffset(0, false);
+    MPU6050::setSlaveDataLength(0, 2);
 
-    // set slave 0 i2c address, 0x80=read mode
-    MPU6050::setSlaveAddress(0, devAddr | 0x80);
+    // configure Y axis word
+    MPU6050::setSlaveAddress(1, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+    MPU6050::setSlaveRegister(1, HMC5883L_RA_DATAY_H);// set slave 1 first data register, 0x03 (high byte of x axis)
+    MPU6050::setSlaveEnabled(1, true);// enable slave 1 data transfer
+    MPU6050::setSlaveWordByteSwap(1, false);
+    MPU6050::setSlaveWriteMode(1, false);
+    MPU6050::setSlaveWordGroupOffset(1, false);
+    MPU6050::setSlaveDataLength(1, 2);
 
-    // set slave 0 first data register, 0x03 (high byte of x axis)
-    MPU6050::setSlaveRegister(0, HMC5883L_RA_DATAX_H);
+    // configure Z axis word
+    MPU6050::setSlaveAddress(2, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+    MPU6050::setSlaveRegister(2, HMC5883L_RA_DATAZ_H);// set slave 1 first data register, 0x03 (high byte of x axis)
+    MPU6050::setSlaveEnabled(2, true);// enable slave 1 data transfer
+    MPU6050::setSlaveWordByteSwap(2, false);
+    MPU6050::setSlaveWriteMode(2, false);
+    MPU6050::setSlaveWordGroupOffset(2, false);
+    MPU6050::setSlaveDataLength(2, 2);
 
-    // set slave 0 transfer size to 6 bytes
-    MPU6050::setSlaveDataLength(0, 6);
 
-    // enable slave 0 data transfer
-    MPU6050::setSlaveEnabled(true);
 
     // enable slave 0 delay; hold MPU6050 interrupt until slave 0 data received
-    MPU6050::setSlaveDelayEnabled(true);
+    //MPU6050::setSlaveDelayEnabled(true); // commented out; may interfere with DMP
+
+    // enable MPU6050 i2c master mode
+    MPU6050::setI2CMasterModeEnabled(true);
 }
 
 /** Verify the I2C connection.
