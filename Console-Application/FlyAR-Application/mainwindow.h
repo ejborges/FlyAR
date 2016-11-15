@@ -37,7 +37,7 @@ private:
     QMenu *helpMenu;
 
     QAction *openAct;
-    QList<QAction *> saveAsActs;
+    QAction *saveAct;
     QAction *exitAct;
     QAction *penColorAct;
     QAction *penWidthAct;

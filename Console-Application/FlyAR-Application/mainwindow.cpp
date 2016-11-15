@@ -12,7 +12,7 @@ MainWindow::MainWindow()
     createMenus();
 
     setWindowTitle(tr("FlyAR"));
-    setFixedSize(500, 500);
+    setFixedSize(750, 750);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -81,14 +81,9 @@ void MainWindow::createActions()
     openAct->setShortcuts(QKeySequence::Open);
     connect(openAct, SIGNAL(triggered()), this, SLOT(open()));
 
-    foreach (QByteArray format, QImageWriter::supportedImageFormats()) {
-        QString text = tr("%1...").arg(QString(format).toUpper());
-
-        QAction *action = new QAction(text, this);
-        action->setData(format);
-        connect(action, SIGNAL(triggered()), this, SLOT(save()));
-        saveAsActs.append(action);
-    }
+    saveAct = new QAction(tr("&Save..."), this);
+    saveAct->setShortcuts(QKeySequence::Save);
+    connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
 
     exitAct = new QAction(tr("&Exit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
@@ -114,13 +109,9 @@ void MainWindow::createActions()
 
 void MainWindow::createMenus()
 {
-    saveAsMenu = new QMenu(tr("&Save As"), this);
-    foreach (QAction *action, saveAsActs)
-        saveAsMenu->addAction(action);
-
     fileMenu = new QMenu(tr("&File"), this);
     fileMenu->addAction(openAct);
-    fileMenu->addMenu(saveAsMenu);
+    fileMenu->addAction(saveAct);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
@@ -144,12 +135,12 @@ bool MainWindow::maybeSave()
     if (flyAR->isModified()) {
        QMessageBox::StandardButton ret;
        ret = QMessageBox::warning(this, tr("FlyAR"),
-                          tr("The image has been modified.\n"
+                          tr("The data points have been modified.\n"
                              "Do you want to save your changes?"),
                           QMessageBox::Save | QMessageBox::Discard
                           | QMessageBox::Cancel);
         if (ret == QMessageBox::Save) {
-            return saveFile("png");
+            return saveFile("txt");
         } else if (ret == QMessageBox::Cancel) {
             return false;
         }
@@ -159,7 +150,7 @@ bool MainWindow::maybeSave()
 
 bool MainWindow::saveFile(const QByteArray &fileFormat)
 {
-    QString initialPath = QDir::currentPath() + "/untitled." + fileFormat;
+    QString initialPath = QDir::currentPath() + "/DataPoints." + fileFormat;
 
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"),
                                initialPath,
