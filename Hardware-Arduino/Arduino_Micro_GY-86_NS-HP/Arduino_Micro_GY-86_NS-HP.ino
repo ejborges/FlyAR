@@ -32,130 +32,201 @@
 
 
 #include <Wire.h>
-#include "FlyAR.h"
-#include "MPU6050.h"
+#include "I2Cdev.h"
+#include "MPU6050_6Axis_MotionApps20.h"
+//#include "MPU6050.h" // not necessary if using MotionApps include file
 #include "HMC5883L.h"
+#include "FlyAR.h"
 
 
 #define serial_out
 
+// class default I2C address is 0x68
+MPU6050 mpu;
 
+// class default I2C address is 0x1E
+HMC5883L mag;
+
+// MPU control/status vars
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
+
+// orientation/motion vars
+Quaternion q;           // [w, x, y, z]         quaternion container
+VectorInt16 aa;         // [x, y, z]            accel sensor measurements
+VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity;    // [x, y, z]            gravity vector
+float euler[3];         // [psi, theta, phi]    Euler angle container
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+
+// ================================================================
+// ===               INTERRUPT DETECTION ROUTINES               ===
+// ================================================================
+
+volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
+volatile bool ms5611Interrupt = false;     // indicates whether MPU interrupt pin has gone low
+void dmpDataReady() {
+  mpuInterrupt = true;
+}
+void ms5611DataReady() {
+  ms5611Interrupt = true;
+}
+
+// ================================================================
+// ===                      INITIAL SETUP                       ===
+// ================================================================
 void setup() {
-  
-  #ifdef serial_out
-    Serial.begin(115200);
-  #endif
-
-  //enable interrupt INT2 (pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
-  //jump to the MPU6050_ISR function on rising edge
-  attachInterrupt(0, MPU6050_ISR, RISING);
-
-  //enable interrupt INT3 (pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
-  //jump to the MS5611_ISR function on rising edge
-  attachInterrupt(1, MS5611_ISR, FALLING);
-
 
   Wire.begin(); // join i2c bus
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-
+  
   #ifdef serial_out
-    Serial.println(F("Initializing I2C devices..."));
+  Serial.begin(115200);
+  Serial.println(F("Initializing I2C devices..."));
   #endif
+  mpu.initialize();
+
+#ifdef serial_out
+  // verify connection
+  Serial.println(F("Testing device connections..."));
+  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  //Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
+
+  // wait for ready
+  Serial.println(F("\nSend any character to begin DMP programming: "));
+  while (Serial.available() && Serial.read()); // empty buffer
+  while (!Serial.available());                 // wait for data
+  while (Serial.available() && Serial.read()); // empty buffer again
+
+  Serial.println(F("Initializing DMP..."));
+#endif
+
+  // load and configure the DMP
+  devStatus = mpu.dmpInitialize();
+
+  // supply your own gyro offsets here, scaled for min sensitivity
+  // If you don't know yours, you can find an automated sketch for this task from:
+  //   http://www.i2cdevlib.com/forums/topic/96-arduino-sketch-to-automatically-calculate-mpu6050-offsets/
+  mpu.setXGyroOffset(220);
+  mpu.setYGyroOffset(76);
+  mpu.setZGyroOffset(-85);
+  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+
+  // Have to init mag here because dmpInit sets its own slave 0 params, we overwrite those params here
+  mag.initialize();
+
+  //enable interrupt INT2 (pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
+  //jump to the dmpDataReady function on rising edge
+  attachInterrupt(0, dmpDataReady, RISING);
+
+  //enable interrupt INT3 (pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
+  //jump to the ms5611DataReady function on falling edge
+  attachInterrupt(1, ms5611DataReady, FALLING);
+
+
+
+
+
 
   // --------------------------------------------------------
   // configure the MPU6050 (gyro/accelerometer)
   //
-  Wire.beginTransmission(MPU6050_ADDRESS);
-  //
-  // exit sleep
-  Wire.write(MPU6050_PWR_MGMT_1);   // queue register address
-  Wire.write(0);                    // queue register value
-  Wire.endTransmission(false);      // transmit/write to register and keep connection open
-  //
-  // gyro sample rate = 8kHz / (1 + 7) = 1kHz; same as accelerometer sample rate
-  Wire.write(MPU6050_SMPLRT_DIV);
-  Wire.write(7);
-  Wire.endTransmission(false);
-  //
-  // gyro full scale = +/- 2000dps
-  Wire.write(MPU6050_GYRO_CONFIG);
-  Wire.write(0x18);
-  Wire.endTransmission(false);
-  //
-  // accelerometer full scale = +/- 4g
-  Wire.write(MPU6050_ACCEL_CONFIG);
-  Wire.write(0x08);
-  Wire.endTransmission(false);
-  //
-  // enable INTA interrupt
-  Wire.write(MPU6050_INT_ENABLE);
-  Wire.write(0x01);
-  Wire.endTransmission(false);
-  
-  // --------------------------------------------------------
-  // configure the HMC5883L (magnetometer)
-  //
-  // disable i2c master mode
-  Wire.write(MPU6050_USER_CTRL);
-  Wire.write(0x00);
-  Wire.endTransmission(false);
-  //
-  // enable i2c master bypass mode
-  Wire.write(MPU6050_INT_PIN_CFG);
-  Wire.write(0x02);
-  Wire.endTransmission(true);       // release i2c bus
-  //
-  Wire.beginTransmission(HMC5883L_ADDRESS);
-  //
-  // sample rate = 75Hz
-  Wire.write(HMC5883L_CONFIG_A);
-  Wire.write(0x18);
-  Wire.endTransmission(false);
-  //
-  // full scale = +/- 4.0 Gauss
-  Wire.write(HMC5883L_CONFIG_B);
-  Wire.write(0x80);
-  Wire.endTransmission(false);
-  //
-  // continuous measurement mode
-  Wire.write(HMC5883L_MODE);
-  Wire.write(0x00);
-  Wire.endTransmission(true);
-  //
-  Wire.beginTransmission(MPU6050_ADDRESS);
-  //
-  // disable i2c master bypass mode
-  Wire.write(MPU6050_INT_PIN_CFG);
-  Wire.write(0x00);
-  Wire.endTransmission(false);
-  //
-  // enable i2c master mode
-  Wire.write(MPU6050_USER_CTRL);
-  Wire.write(0x20);
-  Wire.endTransmission(false);
-
-  // --------------------------------------------------------
-  // configure the MPU6050 to automatically read the magnetometer
-  //
-  // slave 0 i2c address, read mode
-  Wire.write(MPU6050_I2C_SLV0_ADDR);
-  Wire.write(HMC5883L_ADDRESS | 0x80);
-  Wire.endTransmission(false);
-  //
-  // slave 0 first data register = 0x03 (x axis)
-  Wire.write(MPU6050_I2C_SLV0_REG);
-  Wire.write(0x03);
-  Wire.endTransmission(false);
-  //
-  // slave 0 transfer size = 6 bytes, enabled data transaction
-  Wire.write(MPU6050_I2C_SLV0_CTRL);
-  Wire.write(6 | 0x80);
-  Wire.endTransmission(false);
-  //
-  // enable slave 0 delay until all data received
-  Wire.write(MPU6050_I2C_MST_DELAY_CTRL);
-  Wire.write(1);
-  Wire.endTransmission(true);
+//  Wire.beginTransmission(MPU6050_ADDRESS);
+//  //
+//  // exit sleep
+//  Wire.write(MPU6050_PWR_MGMT_1);   // queue register address
+//  Wire.write(0);                    // queue register value
+//  Wire.endTransmission(false);      // transmit/write to register and keep connection open
+//  //
+//  // gyro sample rate = 8kHz / (1 + 7) = 1kHz; same as accelerometer sample rate
+//  Wire.write(MPU6050_SMPLRT_DIV);
+//  Wire.write(7);
+//  Wire.endTransmission(false);
+//  //
+//  // gyro full scale = +/- 2000dps
+//  Wire.write(MPU6050_GYRO_CONFIG);
+//  Wire.write(0x18);
+//  Wire.endTransmission(false);
+//  //
+//  // accelerometer full scale = +/- 4g
+//  Wire.write(MPU6050_ACCEL_CONFIG);
+//  Wire.write(0x08);
+//  Wire.endTransmission(false);
+//  //
+//  // enable INTA interrupt
+//  Wire.write(MPU6050_INT_ENABLE);
+//  Wire.write(0x01);
+//  Wire.endTransmission(false);
+//
+//  // --------------------------------------------------------
+//  // configure the HMC5883L (magnetometer)
+//  //
+//  // disable i2c master mode
+//  Wire.write(MPU6050_USER_CTRL);
+//  Wire.write(0x00);
+//  Wire.endTransmission(false);
+//  //
+//  // enable i2c master bypass mode
+//  Wire.write(MPU6050_INT_PIN_CFG);
+//  Wire.write(0x02);
+//  Wire.endTransmission(true);       // release i2c bus
+//  //
+//  Wire.beginTransmission(HMC5883L_ADDRESS);
+//  //
+//  // sample rate = 75Hz
+//  Wire.write(HMC5883L_CONFIG_A);
+//  Wire.write(0x18);
+//  Wire.endTransmission(false);
+//  //
+//  // full scale = +/- 4.0 Gauss
+//  Wire.write(HMC5883L_CONFIG_B);
+//  Wire.write(0x80);
+//  Wire.endTransmission(false);
+//  //
+//  // continuous measurement mode
+//  Wire.write(HMC5883L_MODE);
+//  Wire.write(0x00);
+//  Wire.endTransmission(true);
+//  //
+//  Wire.beginTransmission(MPU6050_ADDRESS);
+//  //
+//  // disable i2c master bypass mode
+//  Wire.write(MPU6050_INT_PIN_CFG);
+//  Wire.write(0x00);
+//  Wire.endTransmission(false);
+//  //
+//  // enable i2c master mode
+//  Wire.write(MPU6050_USER_CTRL);
+//  Wire.write(0x20);
+//  Wire.endTransmission(false);
+//
+//  // --------------------------------------------------------
+//  // configure the MPU6050 to automatically read the magnetometer
+//  //
+//  // slave 0 i2c address, read mode
+//  Wire.write(MPU6050_I2C_SLV0_ADDR);
+//  Wire.write(HMC5883L_ADDRESS | 0x80);
+//  Wire.endTransmission(false);
+//  //
+//  // slave 0 first data register = 0x03 (x axis)
+//  Wire.write(MPU6050_I2C_SLV0_REG);
+//  Wire.write(0x03);
+//  Wire.endTransmission(false);
+//  //
+//  // slave 0 transfer size = 6 bytes, enabled data transaction
+//  Wire.write(MPU6050_I2C_SLV0_CTRL);
+//  Wire.write(6 | 0x80);
+//  Wire.endTransmission(false);
+//  //
+//  // enable slave 0 delay until all data received
+//  Wire.write(MPU6050_I2C_MST_DELAY_CTRL);
+//  Wire.write(1);
+//  Wire.endTransmission(true);
 
   // --------------------------------------------------------
   // configure the MS5611 (barometer)
@@ -193,130 +264,4 @@ void loop() {
     Serial.print(F("[H"));     // cursor to home command
   #endif
 
-}
-
-
-
-// Interrupt service routine for the MPU6050 + HMC5883L
-void MPU6050_ISR(void)
-{
-  
-}
-
-// Interrupt service routine for the MS5611
-void MS5611_ISR(void)
-{
-  
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// --------------------------------------------------------
-// MPU6050_read
-//
-// This is a common function to read multiple bytes
-// from an I2C device.
-//
-// It uses the boolean parameter for Wire.endTransMission()
-// to be able to hold or release the I2C-bus.
-// This is implemented in Arduino 1.0.1.
-//
-// Only this function is used to read.
-// There is no function for a single byte.
-//
-int MPU6050_read(int start, uint8_t *buffer, int size)
-{
-  int i, n, error;
- 
-  Wire.beginTransmission(MPU6050_I2C_ADDRESS);
-  n = Wire.write(start);
-  if (n != 1)
-    return (-10);
- 
-  n = Wire.endTransmission(false);    // hold the I2C-bus
-  if (n != 0)
-    return (n);
- 
-  // Third parameter is true: relase I2C-bus after data is read.
-  Wire.requestFrom(MPU6050_I2C_ADDRESS, size, true);
-  i = 0;
-  while(Wire.available() && i<size)
-  {
-    buffer[i++]=Wire.read();
-  }
-  if ( i != size)
-    return (-11);
- 
-  return (0);  // return : no error
-}
-
-// --------------------------------------------------------
-// MPU6050_write
-//
-// This is a common function to write multiple bytes to an I2C device.
-//
-// If only a single register is written,
-// use the function MPU_6050_write_reg().
-//
-// Parameters:
-//   start : Start address, use a define for the register
-//   pData : A pointer to the data to write.
-//   size  : The number of bytes to write.
-//
-// If only a single register is written, a pointer
-// to the data has to be used, and the size is
-// a single byte:
-//   int data = 0;        // the data to write
-//   MPU6050_write (MPU6050_PWR_MGMT_1, &c, 1);
-//
-int MPU6050_write(int start, const uint8_t *pData, int size)
-{
-  int n, error;
- 
-  Wire.beginTransmission(MPU6050_I2C_ADDRESS);
-  n = Wire.write(start);        // write the start address
-  if (n != 1)
-    return (-20);
- 
-  n = Wire.write(pData, size);  // write data bytes
-  if (n != size)
-    return (-21);
- 
-  error = Wire.endTransmission(true); // release the I2C-bus
-  if (error != 0)
-    return (error);
- 
-  return (0);         // return : no error
-}
- 
-// --------------------------------------------------------
-// MPU6050_write_reg
-//
-// An extra function to write a single register.
-// It is just a wrapper around the MPU_6050_write()
-// function, and it is only a convenient function
-// to make it easier to write a single register.
-//
-int MPU6050_write_reg(int reg, uint8_t data)
-{
-  int error;
- 
-  error = MPU6050_write(reg, &data, 1);
- 
-  return (error);
 }

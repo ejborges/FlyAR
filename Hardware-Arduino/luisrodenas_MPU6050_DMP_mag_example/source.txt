@@ -1,0 +1,1 @@
+http://www.i2cdevlib.com/forums/topic/111-arduino-example-sketch-to-read-magnetometer-while-dmp-is-on/
