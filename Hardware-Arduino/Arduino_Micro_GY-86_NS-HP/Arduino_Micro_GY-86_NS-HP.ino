@@ -160,10 +160,10 @@ void setup() {
 
 
   // disable i2c master bypass mode
-  MPU6050::setI2CBypassEnabled(false);
+  mpu.setI2CBypassEnabled(false);
 
   // configure X axis word
-  mpu.setSlaveAddress(0, devAddr | 0x80); // set slave 0 i2c address, 0x80=read mode
+  mpu.setSlaveAddress(0, HMC5883L_DEFAULT_ADDRESS | 0x80); // set slave 0 i2c address, 0x80=read mode
   mpu.setSlaveRegister(0, HMC5883L_RA_DATAX_H);// set slave 0 first data register, 0x03 (high byte of x axis)
   mpu.setSlaveEnabled(0, true);// enable slave 0 data transfer
   mpu.setSlaveWordByteSwap(0, false);
@@ -172,7 +172,7 @@ void setup() {
   mpu.setSlaveDataLength(0, 2);
 
   // configure Y axis word
-  mpu.setSlaveAddress(1, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+  mpu.setSlaveAddress(1, HMC5883L_DEFAULT_ADDRESS | 0x80); // set slave 1 i2c address, 0x80=read mode
   mpu.setSlaveRegister(1, HMC5883L_RA_DATAY_H);// set slave 1 first data register, 0x03 (high byte of x axis)
   mpu.setSlaveEnabled(1, true);// enable slave 1 data transfer
   mpu.setSlaveWordByteSwap(1, false);
@@ -181,7 +181,7 @@ void setup() {
   mpu.setSlaveDataLength(1, 2);
 
   // configure Z axis word
-  mpu.setSlaveAddress(2, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+  mpu.setSlaveAddress(2, HMC5883L_DEFAULT_ADDRESS | 0x80); // set slave 1 i2c address, 0x80=read mode
   mpu.setSlaveRegister(2, HMC5883L_RA_DATAZ_H);// set slave 1 first data register, 0x03 (high byte of x axis)
   mpu.setSlaveEnabled(2, true);// enable slave 1 data transfer
   mpu.setSlaveWordByteSwap(2, false);
