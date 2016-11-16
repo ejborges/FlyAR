@@ -145,8 +145,57 @@ void setup() {
   mpu.setZGyroOffset(-85);
   mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
 
+  // --------------------------------------------------------------------------------------------------
   // Have to init mag here because dmpInit sets its own slave 0 params, we overwrite those params here
+  // configure magnetometer to pass data to MPU6050 automatically
+
+  // disable MPU6050 i2c master mode
+  mpu.setI2CMasterModeEnabled(false);
+
+  // enable i2c master bypass mode
+  mpu.setI2CBypassEnabled(true);
+
   mag.initialize();
+
+
+
+  // disable i2c master bypass mode
+  MPU6050::setI2CBypassEnabled(false);
+
+  // configure X axis word
+  mpu.setSlaveAddress(0, devAddr | 0x80); // set slave 0 i2c address, 0x80=read mode
+  mpu.setSlaveRegister(0, HMC5883L_RA_DATAX_H);// set slave 0 first data register, 0x03 (high byte of x axis)
+  mpu.setSlaveEnabled(0, true);// enable slave 0 data transfer
+  mpu.setSlaveWordByteSwap(0, false);
+  mpu.setSlaveWriteMode(0, false);
+  mpu.setSlaveWordGroupOffset(0, false);
+  mpu.setSlaveDataLength(0, 2);
+
+  // configure Y axis word
+  mpu.setSlaveAddress(1, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+  mpu.setSlaveRegister(1, HMC5883L_RA_DATAY_H);// set slave 1 first data register, 0x03 (high byte of x axis)
+  mpu.setSlaveEnabled(1, true);// enable slave 1 data transfer
+  mpu.setSlaveWordByteSwap(1, false);
+  mpu.setSlaveWriteMode(1, false);
+  mpu.setSlaveWordGroupOffset(1, false);
+  mpu.setSlaveDataLength(1, 2);
+
+  // configure Z axis word
+  mpu.setSlaveAddress(2, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
+  mpu.setSlaveRegister(2, HMC5883L_RA_DATAZ_H);// set slave 1 first data register, 0x03 (high byte of x axis)
+  mpu.setSlaveEnabled(2, true);// enable slave 1 data transfer
+  mpu.setSlaveWordByteSwap(2, false);
+  mpu.setSlaveWriteMode(2, false);
+  mpu.setSlaveWordGroupOffset(2, false);
+  mpu.setSlaveDataLength(2, 2);
+
+  // enable slave 0 delay; hold MPU6050 interrupt until slave 0 data received
+  //mpu.setSlaveDelayEnabled(true); // commented out; may interfere with DMP
+
+  // enable MPU6050 i2c master mode
+  mpu.setI2CMasterModeEnabled(true);
+
+
 
 
 // make sure it worked (returns 0 if so)
@@ -467,7 +516,7 @@ void loop() {
     Serial.print("DMP Freq:\t");
     Serial.println(frec1);
     #endif
-    
+
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);

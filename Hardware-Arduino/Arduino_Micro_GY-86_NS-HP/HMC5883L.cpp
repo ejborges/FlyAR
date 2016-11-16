@@ -60,14 +60,6 @@ HMC5883L::HMC5883L(uint8_t address) {
  * a lot of -4096 values (see the datasheet for mor information).
  */
 void HMC5883L::initialize() {
-    // configure magnetometer to pass data to MPU6050 automatically
-
-    // disable MPU6050 i2c master mode
-    MPU6050::setI2CMasterModeEnabled(false);
-
-    // enable i2c master bypass mode
-    MPU6050::setI2CBypassEnabled(true);
-
     // write CONFIG_A register
     I2Cdev::writeByte(devAddr, HMC5883L_RA_CONFIG_A,
         (HMC5883L_AVERAGING_8 << (HMC5883L_CRA_AVERAGE_BIT - HMC5883L_CRA_AVERAGE_LENGTH + 1)) |// 8 samples averaged
@@ -80,44 +72,6 @@ void HMC5883L::initialize() {
     
     // write MODE register
     setMode(HMC5883L_MODE_CONTINUOUS);
-
-    // disable i2c master bypass mode
-    MPU6050::setI2CBypassEnabled(false);
-
-    // configure X axis word
-    MPU6050::setSlaveAddress(0, devAddr | 0x80); // set slave 0 i2c address, 0x80=read mode
-    MPU6050::setSlaveRegister(0, HMC5883L_RA_DATAX_H);// set slave 0 first data register, 0x03 (high byte of x axis)
-    MPU6050::setSlaveEnabled(0, true);// enable slave 0 data transfer
-    MPU6050::setSlaveWordByteSwap(0, false);
-    MPU6050::setSlaveWriteMode(0, false);
-    MPU6050::setSlaveWordGroupOffset(0, false);
-    MPU6050::setSlaveDataLength(0, 2);
-
-    // configure Y axis word
-    MPU6050::setSlaveAddress(1, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
-    MPU6050::setSlaveRegister(1, HMC5883L_RA_DATAY_H);// set slave 1 first data register, 0x03 (high byte of x axis)
-    MPU6050::setSlaveEnabled(1, true);// enable slave 1 data transfer
-    MPU6050::setSlaveWordByteSwap(1, false);
-    MPU6050::setSlaveWriteMode(1, false);
-    MPU6050::setSlaveWordGroupOffset(1, false);
-    MPU6050::setSlaveDataLength(1, 2);
-
-    // configure Z axis word
-    MPU6050::setSlaveAddress(2, devAddr | 0x80); // set slave 1 i2c address, 0x80=read mode
-    MPU6050::setSlaveRegister(2, HMC5883L_RA_DATAZ_H);// set slave 1 first data register, 0x03 (high byte of x axis)
-    MPU6050::setSlaveEnabled(2, true);// enable slave 1 data transfer
-    MPU6050::setSlaveWordByteSwap(2, false);
-    MPU6050::setSlaveWriteMode(2, false);
-    MPU6050::setSlaveWordGroupOffset(2, false);
-    MPU6050::setSlaveDataLength(2, 2);
-
-
-
-    // enable slave 0 delay; hold MPU6050 interrupt until slave 0 data received
-    //MPU6050::setSlaveDelayEnabled(true); // commented out; may interfere with DMP
-
-    // enable MPU6050 i2c master mode
-    MPU6050::setI2CMasterModeEnabled(true);
 }
 
 /** Verify the I2C connection.
