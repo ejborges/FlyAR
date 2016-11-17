@@ -52,9 +52,9 @@ HMC5883L::HMC5883L(uint8_t address) {
 }
 
 /** Power on and prepare for general usage.
- * This will prepare the magnetometer with default settings, ready for single-
- * use mode (very low power requirements). Default settings include 8-sample
- * averaging, 15 Hz data output rate, normal measurement bias, a,d 1090 gain (in
+ * This will prepare the magnetometer with default settings, ready for continuous-
+ * use mode. Default settings include 8-sample
+ * averaging, 75 Hz data output rate, normal measurement bias, a,d 1090 gain (in
  * terms of LSB/Gauss). Be sure to adjust any settings you need specifically
  * after initialization, especially the gain settings if you happen to be seeing
  * a lot of -4096 values (see the datasheet for mor information).
