@@ -3,6 +3,9 @@
 // www.meas-spec.com DA5611-01BA01_006 Jul. 19, 2011
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
 //
+// Parts of this file include code from the AeroQuad MS5611 library cited as [AeroQuad source]
+// https://github.com/AeroQuad/AeroQuad/blob/master/Libraries/AQ_BarometricSensor/BarometricSensor_MS5611.h
+//
 // 16/11/2016 by Emilio Borges <emilio.j.borges@gmail.com>
 //
 // Changelog:
@@ -75,6 +78,79 @@ void MS5611::testConnection() {
 //        return (buffer[0] == 'H' && buffer[1] == '4' && buffer[2] == '3');
 //    }
     return false;
+}
+
+/** Write single byte to MS5611
+ * @param devAddr I2C slave device address
+ * @param regAddr Register address to write to
+ * @param data New byte value to write
+ * @return Status of operation (true = success)
+ */
+bool writeByte(uint8_t devAddr, uint8_t data){
+
+    #ifdef I2CDEV_SERIAL_DEBUG
+    Serial.print("I2C (0x");
+    Serial.print(devAddr, HEX);
+    Serial.print(") writing ");
+    Serial.print(length, DEC);
+    Serial.print(" bytes to 0x");
+    Serial.print(regAddr, HEX);
+    Serial.print("...");
+    #endif
+    uint8_t status = 0;
+    #if ((I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO < 100) || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_NBWIRE)
+    Wire.beginTransmission(devAddr);
+    Wire.send((uint8_t) data); // send data
+    Wire.endTransmission();
+    #elif (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO >= 100)
+    Wire.beginTransmission(devAddr);
+    Wire.write((uint8_t) data); // send data
+    status = Wire.endTransmission();
+    #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
+    Fastwire::beginTransmission(devAddr);
+    Fastwire::write(data);
+    Fastwire::stop();
+    #endif
+    #ifdef I2CDEV_SERIAL_DEBUG
+    Serial.println(". Done.");
+    #endif
+
+    
+
+}
+
+/** Reset device to factory defaults
+ */
+void reset(){
+
+}
+
+/** TODO
+ * @return
+ */
+void readPROM(){
+
+}
+
+/** TODO
+ * @return
+ */
+void D1Conversion(){
+
+}
+
+/** TODO
+ * @return
+ */
+void D2Conversion(){
+
+}
+
+/** TODO
+ * @return
+ */
+void readADCResult(){
+
 }
 
 /** Calculate the difference between actual and reference temperature
@@ -221,4 +297,5 @@ float MS5611::getPressure_float() {
     #endif
     return ((((D1 * SENS) >> 21) - OFF) >> 15) / 100.0;
 }
+
 

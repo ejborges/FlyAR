@@ -3,12 +3,15 @@
 // www.meas-spec.com DA5611-01BA01_006 Jul. 19, 2011
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
 //
+// Parts of this file include code from the AeroQuad MS5611 library cited as [AeroQuad source]
+// https://github.com/AeroQuad/AeroQuad/blob/master/Libraries/AQ_BarometricSensor/BarometricSensor_MS5611.h
+//
 // 16/11/2016 by Emilio Borges <emilio.j.borges@gmail.com>
 //
 // Changelog:
 //     2016-11-16 - initial release
 
-// NOTE: THIS IS ONLY A PARIAL RELEASE. THIS DEVICE CLASS IS CURRENTLY UNDERGOING ACTIVE
+// NOTE: THIS IS ONLY A PARTIAL RELEASE. THIS DEVICE CLASS IS CURRENTLY UNDERGOING ACTIVE
 // DEVELOPMENT AND IS STILL MISSING SOME IMPORTANT FEATURES. PLEASE KEEP THIS IN MIND IF
 // YOU DECIDE TO USE THIS PARTICULAR CODE FOR ANYTHING.
 
@@ -41,9 +44,28 @@ THE SOFTWARE.
 
 #include "I2Cdev.h"
 
+// Address
 #define MS5611_ADDRESS_CSB_LOW      0x77 // CSB pin low (GND), default for InvenSense evaluation board and GY-86 board
 #define MS5611_ADDRESS_CSB_HIGH     0x76 // CSB pin high (VCC)
 #define MS5611_DEFAULT_ADDRESS      MS5611_ADDRESS_CSB_LOW
+
+// Commands
+#define MS5611_PROM_BASE_ADDR  0xA0
+#define MS5611_PROM_REG_COUNT  8     // number of registers in the PROM
+#define MS5611_D1_Pressure     0x40
+#define MS5611_D2_Temperature  0x50
+#define MS5611_RESET           0x1E
+#define MS5611_ADC_READ        0x00
+
+// D1 and D2 result size (bytes)
+#define MS5611_D1D2_SIZE       3
+
+// OSR (Over Sampling Ratio) constants
+#define MS5611_OSR_256         0x00
+#define MS5611_OSR_512         0x02
+#define MS5611_OSR_1024        0x04
+#define MS5611_OSR_2048        0x06
+#define MS5611_OSR_4096        0x08
 
 // better temperature and pressure accuracy, may run a bit slower, highly recommended if temp below 20 C
 //#define SECOND_ORDER_TEMP_COMPENSATION
@@ -64,6 +86,10 @@ public:
 
     void initialize();
     bool testConnection();
+
+    // The MS5611 handle's I2C communication differently than other I2C devices.
+    // Here, we don't need to specify a register address, just the device address and data.
+    bool writeByte(uint8_t devAddr, uint8_t data);
 
     // I2C commands
     void reset();
@@ -107,6 +133,8 @@ public:
 
 private:
     uint8_t devAddr;
+
+    uint16_t MS5611Prom[MS561101BA_PROM_REG_COUNT];
 
     #ifndef DEFINE_CONSTANTS
     const int32_t P_MIN_MBAR = 1000;
