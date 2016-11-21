@@ -24,7 +24,8 @@ printf "FlyAR Starting Up. Press Ctrl-C within 3 seconds to abort.\n"
 sleep 3
 
 # Start the sensor reading application in the background
-python3 SerialSample.py &
-
+python3 ~/FlyAR/Pi-Software/TestForStartup.py
+sleep 2
 # Start FlyAR.py - don't run this in the background ;)
-python3 FlyAR.py
+cd ~/FlyAR/Pi-Software
+sudo python3 FlyAR.py
