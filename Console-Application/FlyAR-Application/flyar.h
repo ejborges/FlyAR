@@ -22,13 +22,13 @@ public:
         int type;
         int r, g, b;
         float x, y, z;
-        float xRad, yRad;
+        float radius;
     };
 
     vector<obj> objVec;
 
     bool openImage(const QString &fileName);
-    bool saveImage(const QString &fileName, const char *fileFormat);
+    bool saveImage(const QString &fileName);
     void setPenColor(const QColor &newColor);
     void setPenWidth(int newWidth);
     void setNewHeight(int newHeight);
@@ -57,8 +57,7 @@ private:
     int objCount;
     int objType;
     float objHeight;
-    float xRadius;
-    float yRadius;
+    float objRadius;
     QColor myPenColor;
     QImage image;
     QPoint lastPoint;

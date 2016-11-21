@@ -62,14 +62,14 @@ void MainWindow::about()
 {
     QMessageBox::about(this, tr("About FlyAR GUI"),
             tr("<p>This GUI application gives you a basic view of a field that you might "
-               "be racing in.  It is assuming that your Quad is facing outwards and "
+               "be flying in.  It is assuming that your vehicle is facing outwards and "
                "is placed at the bottom center of the screen. </p>"
                "<p> To help you visualize the field. You can click the File option "
                "in the menu bar and open an image file to show where the obstacles  "
                "would go from a top down sort of view.  When you click on the screen "
                "you will have to specify first what type of object you would like to show, "
                "and then add a value between 1-15 which represents the height of the object "
-               "off the ground.  You will also have to specify the x-radius and y-radius of the object "
+               "off the ground.  You will also have to specify the radius of the object "
                "that you selected. "
                "The data of each position will be stored in a comma separated file that "
                "is determined in the constructor of the FlyAR source file</p> "));
@@ -160,6 +160,6 @@ bool MainWindow::saveFile(const QByteArray &fileFormat)
     if (fileName.isEmpty()) {
         return false;
     } else {
-        return flyAR->saveImage(fileName, fileFormat.constData());
+        return flyAR->saveImage(fileName);
     }
 }

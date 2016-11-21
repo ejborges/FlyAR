@@ -11,8 +11,7 @@ FlyAR::FlyAR(QWidget *parent) :
     objCount = 0;
     objHeight = 1.0f;
     objType = 1;
-    xRadius = 20.0f;
-    yRadius = 20.0f;
+    objRadius = 20.0f;
 }
 
 bool FlyAR::openImage(const QString &fileName)
@@ -29,7 +28,7 @@ bool FlyAR::openImage(const QString &fileName)
     return true;
 }
 
-bool FlyAR::saveImage(const QString &fileName, const char *fileFormat)
+bool FlyAR::saveImage(const QString &fileName)
 {
     modified = false;
     writeToFile(fileName); //write to the file when saves
@@ -58,7 +57,7 @@ void FlyAR::clearImage()
 void FlyAR::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
-        bool ok, shape, xrad, yrad = false;
+        bool ok, shape, rad = false;
         lastPoint = event->pos();
 
         objType = QInputDialog::getInt(this, tr("FlyAR"),
@@ -73,34 +72,26 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                                                 1.0f, 15.0f, 1.0f, &ok);
             if (ok)
             {
-                xRadius = QInputDialog::getInt(this, tr("FlyAR"),
-                                                    tr("X-Radius (10-50): "),
-                                                    xRadius,
-                                                    10, 50, 2, &xrad);
-                if (xrad)
+                objRadius = QInputDialog::getInt(this, tr("FlyAR"),
+                                                    tr("Radius (10-50): "),
+                                                    objRadius,
+                                                    10, 50, 2, &rad);
+                if (rad)
                 {
-                    yRadius = QInputDialog::getInt(this, tr("FlyAR"),
-                                                        tr("Y-Radius (10-50): "),
-                                                        yRadius,
-                                                        10, 50, 2, &yrad);
-                    if (yrad)
-                    {
-                        drawObj(event->pos());
+                    drawObj(event->pos());
 
-                        objVec.push_back(obj());
+                    objVec.push_back(obj());
 
-                        objVec[objCount].type = objType;
-                        objVec[objCount].r = (myPenColor.rgb() >> 16) & 0xFF;
-                        objVec[objCount].g = (myPenColor.rgb() >> 8) & 0xFF;
-                        objVec[objCount].b = (myPenColor.rgb()) & 0xFF;
-                        objVec[objCount].x = (lastPoint.x()-375+(xRadius/2.0f))/75.0f;
-                        objVec[objCount].y = (750-lastPoint.y()+(yRadius/2.0f))/75.0f;
-                        objVec[objCount].z = objHeight;
-                        objVec[objCount].xRad = (xRadius/50.0f);
-                        objVec[objCount].yRad = (yRadius/50.0f);
-                        objCount++; //Increment the count of total objects
-                        modified = true;
-                    }
+                    objVec[objCount].type = objType;
+                    objVec[objCount].r = (myPenColor.rgb() >> 16) & 0xFF;
+                    objVec[objCount].g = (myPenColor.rgb() >> 8) & 0xFF;
+                    objVec[objCount].b = (myPenColor.rgb()) & 0xFF;
+                    objVec[objCount].x = (lastPoint.x()-375+(objRadius/2.0f))/75.0f;
+                    objVec[objCount].y = (750-lastPoint.y()+(objRadius/2.0f))/75.0f;
+                    objVec[objCount].z = objHeight;
+                    objVec[objCount].radius = (objRadius/50.0f);
+                    objCount++; //Increment the count of total objects
+                    modified = true;
                 }
             }
         }
@@ -143,10 +134,10 @@ void FlyAR::drawObj(const QPoint &endPoint)
 
         if (objType == 1)
         {
-            painter.drawEllipse(QRect(endPoint.x(), endPoint.y(), xRadius, yRadius));
+            painter.drawEllipse(QRect(endPoint.x(), endPoint.y(), objRadius, objRadius));
         } else if (objType == 2)
         {
-            painter.drawRect(QRect(endPoint.x(), endPoint.y(), xRadius, yRadius));
+            painter.drawRect(QRect(endPoint.x(), endPoint.y(), objRadius, objRadius));
         }
 
         modified = true;
@@ -177,8 +168,7 @@ void FlyAR::writeToFile(QString theFileName)
         out << QString::number(it->x) + ", ";
         out << QString::number(it->y) + ", ";
         out << QString::number(it->z) + ", ";
-        out << QString::number(it->xRad) + ", ";
-        out << QString::number(it->yRad) + "\n";
+        out << QString::number(it->radius) + "\n";
     }
 
 
