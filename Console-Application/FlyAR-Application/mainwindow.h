@@ -3,8 +3,11 @@
 
 #include <QList>
 #include <QMainWindow>
+#include "flyar.h"
+#include "objtable.h"
 
 class FlyAR;
+class ObjTable;
 
 class MainWindow : public QMainWindow
 {
@@ -19,6 +22,7 @@ protected:
 private slots:
     void open();
     void save();
+    void updateTable();
     void penColor();
     void penWidth();
     void about();
@@ -30,6 +34,7 @@ private:
     bool saveFile(const QByteArray &fileFormat);
 
     FlyAR *flyAR;
+    ObjTable *objTable;
 
     QMenu *saveAsMenu;
     QMenu *fileMenu;
@@ -39,6 +44,7 @@ private:
     QAction *openAct;
     QAction *saveAct;
     QAction *exitAct;
+    QAction *updateTableAct;
     QAction *penColorAct;
     QAction *penWidthAct;
     QAction *clearScreenAct;

@@ -86,8 +86,8 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                     objVec[objCount].r = (myPenColor.rgb() >> 16) & 0xFF;
                     objVec[objCount].g = (myPenColor.rgb() >> 8) & 0xFF;
                     objVec[objCount].b = (myPenColor.rgb()) & 0xFF;
-                    objVec[objCount].x = (lastPoint.x()-375+(objRadius/2.0f))/75.0f;
-                    objVec[objCount].y = (750-lastPoint.y()+(objRadius/2.0f))/75.0f;
+                    objVec[objCount].x = (lastPoint.x()-400+(objRadius/2.0f))/40.0f;
+                    objVec[objCount].y = (533-lastPoint.y()+(objRadius/2.0f))/53.3f;
                     objVec[objCount].z = objHeight;
                     objVec[objCount].radius = (objRadius/50.0f);
                     objCount++; //Increment the count of total objects
@@ -95,7 +95,6 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                 }
             }
         }
-
 
         scribbling = true;
     }
@@ -134,10 +133,10 @@ void FlyAR::drawObj(const QPoint &endPoint)
 
         if (objType == 1)
         {
-            painter.drawEllipse(QRect(endPoint.x(), endPoint.y(), objRadius, objRadius));
+            painter.drawEllipse(QRect(endPoint.x()-(objRadius/2), endPoint.y()-(objRadius/2), objRadius, objRadius));
         } else if (objType == 2)
         {
-            painter.drawRect(QRect(endPoint.x(), endPoint.y(), objRadius, objRadius));
+            painter.drawRect(QRect(endPoint.x()-(objRadius/2), endPoint.y()-(objRadius/2), objRadius, objRadius));
         }
 
         modified = true;
@@ -170,7 +169,6 @@ void FlyAR::writeToFile(QString theFileName)
         out << QString::number(it->z) + ", ";
         out << QString::number(it->radius) + "\n";
     }
-
 
     file.close();
 }

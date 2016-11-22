@@ -1,18 +1,33 @@
 #include <QtWidgets>
 
 #include "mainwindow.h"
-#include "FlyAR.h"
 
 MainWindow::MainWindow()
 {
     flyAR = new FlyAR;
-    setCentralWidget(flyAR);
+    objTable = new ObjTable;
 
     createActions();
     createMenus();
+    QWidget *central = new QWidget(0); // a central widget.
+    QVBoxLayout *layout = new QVBoxLayout(central);
+
+    QSizePolicy winPolicy = flyAR->sizePolicy();
+    winPolicy.setVerticalStretch(2);
+    flyAR->setSizePolicy(winPolicy);
+
+    QSizePolicy tablePolicy = objTable->sizePolicy();
+    tablePolicy.setVerticalStretch(1);
+    objTable->setSizePolicy(tablePolicy);
+
+    layout->addWidget(flyAR);
+    layout->addWidget(objTable);
+    central->setLayout(layout);
+
+    setCentralWidget(central);
 
     setWindowTitle(tr("FlyAR"));
-    setFixedSize(750, 750);
+    setFixedSize(800, 800);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -38,6 +53,26 @@ void MainWindow::save()
     QAction *action = qobject_cast<QAction *>(sender());
     QByteArray fileFormat = action->data().toByteArray();
     saveFile(fileFormat);
+}
+
+void MainWindow::updateTable()
+{
+    int objCounter = 0;
+    for (vector<FlyAR::obj>::iterator it = flyAR->objVec.begin(); it != flyAR->objVec.end(); ++it)
+    {
+        objTable->objVec.push_back(ObjTable::obj());
+
+        objTable->objVec[objCounter].type = it->type;
+        objTable->objVec[objCounter].r = it->r;
+        objTable->objVec[objCounter].g = it->g;
+        objTable->objVec[objCounter].b = it->b;
+        objTable->objVec[objCounter].x = it->x;
+        objTable->objVec[objCounter].y = it->y;
+        objTable->objVec[objCounter].z = it->z;
+        objTable->objVec[objCounter].radius = it->radius;
+    }
+
+    objTable->fillTable(objTable->objVec);
 }
 
 void MainWindow::penColor()
@@ -88,6 +123,9 @@ void MainWindow::createActions()
     exitAct = new QAction(tr("&Exit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+
+    updateTableAct = new QAction(tr("&Update Table Values"), this);
+    connect(updateTableAct, SIGNAL(triggered()), this, SLOT(updateTable()));
 
     penColorAct = new QAction(tr("&Pen Color..."), this);
     connect(penColorAct, SIGNAL(triggered()), this, SLOT(penColor()));
@@ -160,6 +198,7 @@ bool MainWindow::saveFile(const QByteArray &fileFormat)
     if (fileName.isEmpty()) {
         return false;
     } else {
+
         return flyAR->saveImage(fileName);
     }
 }

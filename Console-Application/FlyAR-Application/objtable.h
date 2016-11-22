@@ -2,6 +2,13 @@
 #define OBJTABLE_H
 
 #include <QWidget>
+#include <QtWidgets>
+#include <QColor>
+#include <QImage>
+#include <QPoint>
+#include <QFile>
+#include <QTextStream>
+#include <vector>
 
 using namespace std;
 
@@ -18,10 +25,8 @@ public:
         float radius;
     };
 
-signals:
+    vector<obj> objVec;
 
-public slots:
-
+    void fillTable(vector<obj> objVec);
 };
-
 #endif // OBJTABLE_H
