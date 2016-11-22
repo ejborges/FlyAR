@@ -5,7 +5,8 @@
 MainWindow::MainWindow()
 {
     flyAR = new FlyAR;
-    objTable = new ObjTable;
+    objTable = new QTableWidget(0, 8);
+    objTable->setHorizontalHeaderLabels(QString("Type,Red,Green,Blue,X-Pos,Y-Pos,Z-Pos,Radius").split(","));
 
     createActions();
     createMenus();
@@ -50,29 +51,26 @@ void MainWindow::open()
 
 void MainWindow::save()
 {
-    QAction *action = qobject_cast<QAction *>(sender());
-    QByteArray fileFormat = action->data().toByteArray();
-    saveFile(fileFormat);
+    saveFile();
 }
 
 void MainWindow::updateTable()
 {
+    objTable->clearContents();
     int objCounter = 0;
     for (vector<FlyAR::obj>::iterator it = flyAR->objVec.begin(); it != flyAR->objVec.end(); ++it)
     {
-        objTable->objVec.push_back(ObjTable::obj());
-
-        objTable->objVec[objCounter].type = it->type;
-        objTable->objVec[objCounter].r = it->r;
-        objTable->objVec[objCounter].g = it->g;
-        objTable->objVec[objCounter].b = it->b;
-        objTable->objVec[objCounter].x = it->x;
-        objTable->objVec[objCounter].y = it->y;
-        objTable->objVec[objCounter].z = it->z;
-        objTable->objVec[objCounter].radius = it->radius;
+        if (objCounter >= objTable->rowCount()) objTable->insertRow(objCounter); //only insert new rows if needed
+        objTable->setItem(objCounter, 0, new QTableWidgetItem(QString::number(it->type)));
+        objTable->setItem(objCounter, 1, new QTableWidgetItem(QString::number(it->r)));
+        objTable->setItem(objCounter, 2, new QTableWidgetItem(QString::number(it->g)));
+        objTable->setItem(objCounter, 3, new QTableWidgetItem(QString::number(it->b)));
+        objTable->setItem(objCounter, 4, new QTableWidgetItem(QString::number(it->x)));
+        objTable->setItem(objCounter, 5, new QTableWidgetItem(QString::number(it->y)));
+        objTable->setItem(objCounter, 6, new QTableWidgetItem(QString::number(it->z)));
+        objTable->setItem(objCounter, 7, new QTableWidgetItem(QString::number(it->radius)));
+        objCounter++;
     }
-
-    objTable->fillTable(objTable->objVec);
 }
 
 void MainWindow::penColor()
@@ -125,6 +123,7 @@ void MainWindow::createActions()
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
     updateTableAct = new QAction(tr("&Update Table Values"), this);
+    updateTableAct->setShortcut(tr("Ctrl+U"));
     connect(updateTableAct, SIGNAL(triggered()), this, SLOT(updateTable()));
 
     penColorAct = new QAction(tr("&Pen Color..."), this);
@@ -154,6 +153,7 @@ void MainWindow::createMenus()
     fileMenu->addAction(exitAct);
 
     optionMenu = new QMenu(tr("&Options"), this);
+    optionMenu->addAction(updateTableAct);
     optionMenu->addAction(penColorAct);
     optionMenu->addAction(penWidthAct);
     optionMenu->addSeparator();
@@ -178,7 +178,7 @@ bool MainWindow::maybeSave()
                           QMessageBox::Save | QMessageBox::Discard
                           | QMessageBox::Cancel);
         if (ret == QMessageBox::Save) {
-            return saveFile("txt");
+            return saveFile();
         } else if (ret == QMessageBox::Cancel) {
             return false;
         }
@@ -186,15 +186,13 @@ bool MainWindow::maybeSave()
     return true;
 }
 
-bool MainWindow::saveFile(const QByteArray &fileFormat)
+bool MainWindow::saveFile()
 {
-    QString initialPath = QDir::currentPath() + "/DataPoints." + fileFormat;
+    QString initialPath = QDir::currentPath() + "/DataPoints.txt";
 
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"),
                                initialPath,
-                               tr("%1 Files (*.%2);;All Files (*)")
-                               .arg(QString::fromLatin1(fileFormat.toUpper()))
-                               .arg(QString::fromLatin1(fileFormat)));
+                               tr("Files (*.txt)"));
     if (fileName.isEmpty()) {
         return false;
     } else {

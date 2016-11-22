@@ -4,7 +4,6 @@
 #include <QList>
 #include <QMainWindow>
 #include "flyar.h"
-#include "objtable.h"
 
 class FlyAR;
 class ObjTable;
@@ -31,10 +30,10 @@ private:
     void createActions();
     void createMenus();
     bool maybeSave();
-    bool saveFile(const QByteArray &fileFormat);
+    bool saveFile();
 
     FlyAR *flyAR;
-    ObjTable *objTable;
+    QTableWidget *objTable;
 
     QMenu *saveAsMenu;
     QMenu *fileMenu;

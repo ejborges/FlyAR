@@ -14,11 +14,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    flyar.cpp \
-    objtable.cpp
+    flyar.cpp
 
 HEADERS  += mainwindow.h \
-    flyar.h \
-    objtable.h
+    flyar.h
 
 FORMS    += mainwindow.ui
