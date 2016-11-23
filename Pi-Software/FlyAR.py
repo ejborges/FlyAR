@@ -17,8 +17,8 @@ DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,0.0,0.0,0.0), layer=3)
 
 shapesToDraw = read_config()
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
-piCamera = PiCamera()
-piCamera.start_preview()
+#piCamera = PiCamera()
+#piCamera.start_preview()
 
 # Create pi3d shapes based on the config information
 pi3dShapes = []
@@ -42,11 +42,6 @@ for shape in shapesToDraw:
 
 
 
-# Text - Sample
-#arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
-#mystring = pi3d.String(font=arialFont, string="Something", z=4)
-##mystring.set_shader(flatsh)
-
 # Fetch key presses
 mykeys = pi3d.Keyboard()
 
@@ -56,6 +51,13 @@ ORIGINAL_PITCH = orientation['pitch']
 ORIGINAL_ROLL = orientation['roll']
 ORIGINAL_PRESSURE = sense.get_pressure()
 
+previousYaw = ORIGINAL_YAW
+previousPitch = ORIGINAL_PITCH
+previousRoll = ORIGINAL_ROLL
+
+cameraX = 0
+cameraY = 0
+cameraZ = 0
 while DISPLAY.loop_running():
     CAMERA.reset()
     for shape in pi3dShapes:
@@ -66,16 +68,30 @@ while DISPLAY.loop_running():
     #mystring.draw()
 
     orientation = sense.get_orientation_degrees()
-    CAMERA.rotateY(ORIGINAL_YAW - orientation['yaw'])
-    CAMERA.rotateX(ORIGINAL_PITCH - orientation['pitch'])
-    CAMERA.rotateZ(ORIGINAL_ROLL - orientation['roll'])
+    currentYaw = orientation['yaw']
+    currentPitch = orientation['pitch']
+    currentRoll = orientation['roll']
 
-    # Updating the position of the object based on the pressure
-    
+    if abs(previousYaw - currentYaw) > .265389732:
+        cameraY = ORIGINAL_YAW - currentYaw
+        previousYaw = currentYaw
+
+    if abs(previousPitch - currentPitch) > .31902688:
+        cameraX = ORIGINAL_PITCH - currentPitch
+        previousPitch = currentPitch
+
+    if abs(previousRoll - currentRoll) > .14933539:
+        cameraZ = ORIGINAL_ROLL - currentRoll
+        previousRoll = currentRoll
+
+    CAMERA.rotateY(cameraY)
+    CAMERA.rotateX(cameraX)
+    CAMERA.rotateZ(cameraZ)
+
     k = mykeys.read()
     
     if k == 27:
         mykeys.close()
-        piCamera.stop_preview()
+#        piCamera.stop_preview()
         DISPLAY.destroy()
         break
