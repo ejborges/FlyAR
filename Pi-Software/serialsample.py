@@ -1,15 +1,15 @@
-from serial import Serial
-import sysv_ipc
+#from serial import Serial
+from sysv_ipc import SharedMemory, IPC_CREX
 
-ser = Serial("/dev/ttyAMA0")
-ser.baudrate = 115200
+#ser = Serial("/dev/ttyAMA0")
+#ser.baudrate = 115200
 
-sharedMemoryXPosition = sysv_ipc.SharedMemory()
-sharedMemoryYPosition = sysv_ipc.SharedMemory()
-sharedMemoryZPosition = sysv_ipc.SharedMemory()
-sharedMemoryRoll = sysv_ipc.SharedMemory()
-sharedMemoryPitch = sysv_ipc.SharedMemory()
-sharedMemoryYaw = sysv_ipc.SharedMemory()
+sharedMemoryXPosition = SharedMemory(None, IPC_CREX)
+sharedMemoryYPosition = SharedMemory(None, IPC_CREX)
+sharedMemoryZPosition = SharedMemory(None, IPC_CREX)
+sharedMemoryRoll = SharedMemory(None, IPC_CREX)
+sharedMemoryPitch = SharedMemory(None, IPC_CREX)
+sharedMemoryYaw = SharedMemory(None, IPC_CREX)
 
 xPositionKey = sharedMemoryXPosition.key
 yPositionKey = sharedMemoryYPosition.key
@@ -23,7 +23,7 @@ with open('shared_memory_keys.flyar', 'wb') as f:
     f.write(str.encode("{},{},{},{},{},{}".format(xPositionKey, yPositionKey, zPositionKey, rollKey, pitchKey, yawKey)))
 
 
-while True:
+while False:
     # Send a '1' byte to the Arduino to indicate that we want data
     ser.write(b"1")
 

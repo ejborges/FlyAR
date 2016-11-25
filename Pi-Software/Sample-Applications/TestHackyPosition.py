@@ -2,6 +2,7 @@ from sense_hat import SenseHat
 from angle2dcm import angle2dcm
 import math
 from os import system
+from time import time
 
 DEBUG = False
 G = -9.81
@@ -13,6 +14,12 @@ previousXAccel = None
 previousYAccel = None
 previousZAccel = None
 
+
+xPosition = 0
+yPosition = 0
+zPosition = 0
+
+previousTime = time()
 while True:
     sense = SenseHat()
     acc = sense.get_accelerometer_raw()
@@ -57,20 +64,31 @@ while True:
     xMovement = ''
     yMovement = ''
     zMovement = ''
+    currentTime = time()
+    timeDifference = currentTime - previousTime
     if abs(previousXAccel - transformedAccelerationX) > 4.04152002:
+        xPosition += timeDifference * transformedAccelerationX
         xMovement = 'X'
     if abs(previousYAccel - transformedAccelerationY) > 0.01798845:
+        yPosition += timeDifference * transformedAccelerationY
         yMovement = 'X'
     if abs(previousZAccel - transformedAccelerationZ) > 1.90756904:
+        zPosition += timeDifference * transformedAccelerationZ
         zMovement = 'X'
 
     print("X Movement: {}".format(xMovement))
     print("Y Movement: {}".format(yMovement))
     print("Z Movement: {}".format(zMovement))
+    print("=========")
+    print("X Position: {}".format(xPosition))
+    print("Y Position: {}".format(yPosition))
+    print("Z Position: {}".format(zPosition))
 
     previousXAccel = transformedAccelerationX
     previousYAccel = transformedAccelerationY
     previousZAccel = transformedAccelerationZ
+
+    previousTime = currentTime
 
     system('clear')
 
