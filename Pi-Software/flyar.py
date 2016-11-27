@@ -9,10 +9,10 @@ from sense_hat import SenseHat
 import pi3d
 from picamera import PiCamera
 from configparser import read_config
-from datacalculator import FlyARData
+from dataretriever import FlyARData
 import math
 
-DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,255.0,0.0,1.0), layer=3)
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,1.0), layer=3)
 
 shapesToDraw = read_config()
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
@@ -58,16 +58,16 @@ cameraZ = 0
 
 sensorData = FlyARData()
 while DISPLAY.loop_running():
-    sensorData.readFilteredData()
+    sensorData.update()
     CAMERA.reset()
     for shape in pi3dShapes:
         shape.draw()
     for text in objectNumbers:
         text.draw()
 
-    currentYaw = math.degrees(sensorData.yaw)
-    currentPitch = math.degrees(sensorData.pitch)
-    currentRoll = math.degrees(sensorData.roll)
+    currentYaw = sensorData.yaw
+    currentPitch = sensorData.pitch
+    currentRoll = sensorData.roll
 
     if ORIGINAL_YAW == None:
         # This is our first time through the loop. Just set our original values and return

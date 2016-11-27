@@ -14,7 +14,7 @@ pitchMem = None
 yawMem = None
 
 # Get the shared memory keys from the config file living in /var/tmpflyar
-with open('/var/tmpflyar/raw_shared_memory.keys.flyar', 'r') as f:
+with open('/var/tmpflyar/raw_shared_memory_keys.flyar', 'r') as f:
     for line in f:
         values = line.strip().split(',')
         xAccelMem = SharedMemory(int(values[0]))
@@ -32,6 +32,10 @@ rollDegMem = SharedMemory(None, IPC_CREX)
 pitchDegMem = SharedMemory(None, IPC_CREX)
 yawDegMem = SharedMemory(None, IPC_CREX)
 
+# Write these locations to file
+with open('/var/tmpflyar/formatted_shared_memory_keys.flyar', 'wb') as f:
+    f.write(str.encode('{},{},{},{},{},{}\n'.format(xPosMem.key, yPosMem.key, zPosMem.key, rollDegMem.key, pitchDegMem.key, yawDegMem.key)))
+
 xPosition = 0
 yPosition = 0
 zPosition = 0
@@ -43,12 +47,17 @@ while True:
     roll = float(rollMem.read())
     pitch = float(pitchMem.read())
     yaw = float(yawMem.read())
+
+    # If previous time is None, then skip this read so we have a time gap to use
+    if previousTime == None:
+        previousTime = time()
+        continue
     
     filteredAcceleration = getFilteredAcceleration(xAccel, yAccel, zAccel, roll, pitch, yaw)
     
     # Calculate the distance traveled by calculating velocity and then position
     currentTime = time()
-    timeDelta = currentTime - self._time
+    timeDelta = currentTime - previousTime
     positionChangeX = filteredAcceleration[0] * timeDelta * timeDelta
     positionChangeY = filteredAcceleration[1] * timeDelta * timeDelta
     positionChangeZ = filteredAcceleration[2] * timeDelta * timeDelta
