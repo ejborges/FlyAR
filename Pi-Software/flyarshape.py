@@ -4,7 +4,7 @@ class FlyARShape(object):
         self._shapeType = None
         self._color = None
         self._position = None
-        self._radii = None
+        self._radius = None
 
     @property
     def shapeType(self):
@@ -31,9 +31,9 @@ class FlyARShape(object):
         self._position = value
 
     @property
-    def radii(self):
-        return self._radii
+    def radius(self):
+        return self._radius
 
-    @radii.setter
-    def radii(self, value):
-        self._radii = value
+    @radius.setter
+    def radius(self, value):
+        self._radius = value

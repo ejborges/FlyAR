@@ -1,5 +1,5 @@
 # Reads in the config file from the boot partition to determine what shapes need to be displayed
-from FlyARShape import FlyARShape
+from flyarshape import FlyARShape
 
 def read_config():
     filePath = '/boot/FlyAR/config.txt'
@@ -19,16 +19,14 @@ def read_config():
             y = float(pieces[6])
             z = float(pieces[5])
             position = [x, y, z]
-            xRadius = float(pieces[7])
-            yRadius = float(pieces[8])
-            radii = [xRadius, yRadius]
+            radius = float(pieces[7])
 
             # Store the shape
             shape = FlyARShape()
             shape.shapeType = shapeType
             shape.color = color
             shape.position = position
-            shape.radii = radii
+            shape.radius = radius
 
             shapes.append(shape)
 

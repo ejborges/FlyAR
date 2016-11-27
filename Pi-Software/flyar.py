@@ -3,17 +3,16 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 # Handle logging FIRST
 import logging
-logging.basicConfig(filename='flyar.log', filemode='w', level=logging.INFO)
+logging.basicConfig(filename='flyar.log', level=logging.INFO)
 
 from sense_hat import SenseHat
 import pi3d
 from picamera import PiCamera
-from ConfigParser import read_config
+from configparser import read_config
+from datacalculator import FlyARData
+import math
 
-# TODO Replace this with a wrapper interface so we can quickly switch from SenseHAT to Emu's sensors
-sense = SenseHat()
-sense.clear()
-DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,0.0,0.0,0.0), layer=3)
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,255.0,0.0,1.0), layer=3)
 
 shapesToDraw = read_config()
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
@@ -28,9 +27,9 @@ arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
 shader = pi3d.Shader('uv_flat')
 for shape in shapesToDraw:
     ringRots = 12 if shape.shapeType == 1 else 4
-    newShape = pi3d.Torus(radius=shape.radii[0], ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.1)
+    newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.1)
     newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
-    logMessage = "Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radii[0], ringRots, shape.position, shape.color)
+    logMessage = "Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
     logging.info(logMessage)
     pi3dShapes.append(newShape)
 
@@ -45,32 +44,37 @@ for shape in shapesToDraw:
 # Fetch key presses
 mykeys = pi3d.Keyboard()
 
-orientation = sense.get_orientation_degrees()
-ORIGINAL_YAW = orientation['yaw']
-ORIGINAL_PITCH = orientation['pitch']
-ORIGINAL_ROLL = orientation['roll']
-ORIGINAL_PRESSURE = sense.get_pressure()
+ORIGINAL_YAW = None
+ORIGINAL_PITCH = None
+ORIGINAL_ROLL = None
 
-previousYaw = ORIGINAL_YAW
-previousPitch = ORIGINAL_PITCH
-previousRoll = ORIGINAL_ROLL
+previousYaw = None
+previousPitch = None
+previousRoll = None
 
 cameraX = 0
 cameraY = 0
 cameraZ = 0
+
+sensorData = FlyARData()
 while DISPLAY.loop_running():
+    sensorData.readFilteredData()
     CAMERA.reset()
     for shape in pi3dShapes:
         shape.draw()
     for text in objectNumbers:
         text.draw()
-    #cylinder.draw(shinesh, [patimg, shapebump, shapshine], 4.0, 0.1)
-    #mystring.draw()
 
-    orientation = sense.get_orientation_degrees()
-    currentYaw = orientation['yaw']
-    currentPitch = orientation['pitch']
-    currentRoll = orientation['roll']
+    currentYaw = math.degrees(sensorData.yaw)
+    currentPitch = math.degrees(sensorData.pitch)
+    currentRoll = math.degrees(sensorData.roll)
+
+    if ORIGINAL_YAW == None:
+        # This is our first time through the loop. Just set our original values and return
+        ORIGINAL_YAW = previousYaw = currentYaw
+        ORIGINAL_PITCH = previousPitch = currentPitch
+        ORIGINAL_ROLL = previousRoll = currentRoll
+        continue
 
     if abs(previousYaw - currentYaw) > .265389732:
         cameraY = ORIGINAL_YAW - currentYaw
