@@ -4,6 +4,7 @@
 *CMakeLists.txt
 
 
+
 # Prerequisites
 *.d
 
@@ -298,6 +299,7 @@ paket-files/
 
 # JetBrains Rider
 .idea/
+cmake-build-debug/
 *.sln.iml
 
 # CodeRush
