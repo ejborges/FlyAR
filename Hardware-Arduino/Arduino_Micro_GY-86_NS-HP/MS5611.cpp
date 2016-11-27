@@ -66,7 +66,7 @@ MS5611::MS5611(uint8_t address) {
  * after initialization. See the datasheet for mor information.
  */
 void MS5611::initialize() {
-
+    reset();
 }
 
 /** Verify the I2C connection.
@@ -82,47 +82,55 @@ void MS5611::testConnection() {
 
 /** Write single byte to MS5611
  * @param devAddr I2C slave device address
- * @param regAddr Register address to write to
  * @param data New byte value to write
  * @return Status of operation (true = success)
  */
 bool writeByte(uint8_t devAddr, uint8_t data){
 
     #ifdef I2CDEV_SERIAL_DEBUG
-    Serial.print("I2C (0x");
-    Serial.print(devAddr, HEX);
-    Serial.print(") writing ");
-    Serial.print(length, DEC);
-    Serial.print(" bytes to 0x");
-    Serial.print(regAddr, HEX);
-    Serial.print("...");
+        Serial.print("I2C (0x");
+        Serial.print(devAddr, HEX);
+        Serial.print(") writing ");
+        Serial.print(length, DEC);
+        Serial.print(" bytes to 0x");
+        Serial.print(regAddr, HEX);
+        Serial.print("...");
     #endif
     uint8_t status = 0;
     #if ((I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO < 100) || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_NBWIRE)
-    Wire.beginTransmission(devAddr);
-    Wire.send((uint8_t) data); // send data
-    Wire.endTransmission();
+        Wire.beginTransmission(devAddr);
+        Wire.send((uint8_t) data); // send data
+        Wire.endTransmission();
     #elif (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO >= 100)
-    Wire.beginTransmission(devAddr);
-    Wire.write((uint8_t) data); // send data
-    status = Wire.endTransmission();
+        Wire.beginTransmission(devAddr);
+        Wire.write((uint8_t) data); // send data
+        status = Wire.endTransmission();
     #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
-    Fastwire::beginTransmission(devAddr);
-    Fastwire::write(data);
-    Fastwire::stop();
+        Fastwire::beginTransmission(devAddr);
+        Fastwire::write(data);
+        Fastwire::stop();
     #endif
     #ifdef I2CDEV_SERIAL_DEBUG
-    Serial.println(". Done.");
+        Serial.println(". Done.");
     #endif
+    return status == 0;
+}
 
-    
+/** Read single byte to MS5611
+ * @param devAddr I2C slave device address
+ * @return Status of operation (true = success)
+ */
+bool readBytes(uint8_t devAddr, uint8_t length){
 
 }
 
-/** Reset device to factory defaults
+/** The Reset sequence shall be sent once after power-on to make sure that
+ * the calibration PROM gets loaded into the internal register.
+ * It can be also used to reset the device ROM from an unknown condition
  */
 void reset(){
-
+    writeByte(MS5611_DEFAULT_ADDRESS, MS5611_RESET);
+    delay(3); // wait for device to reload internal registers
 }
 
 /** TODO
