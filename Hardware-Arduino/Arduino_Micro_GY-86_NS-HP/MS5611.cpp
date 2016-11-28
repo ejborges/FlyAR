@@ -90,11 +90,7 @@ bool writeByte(uint8_t devAddr, uint8_t data){
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
-        Serial.print(") writing ");
-        Serial.print(length, DEC);
-        Serial.print(" bytes to 0x");
-        Serial.print(regAddr, HEX);
-        Serial.print("...");
+        Serial.print(") writing byte...");
     #endif
     uint8_t status = 0;
     #if ((I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO < 100) || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_NBWIRE)
@@ -116,12 +112,166 @@ bool writeByte(uint8_t devAddr, uint8_t data){
     return status == 0;
 }
 
-/** Read single byte to MS5611
+/** Read single byte from MS5611
  * @param devAddr I2C slave device address
- * @return Status of operation (true = success)
+ * @param data Container for byte value read from device
+ * @return Number of bytes read (-1 indicates failure)
  */
-bool readBytes(uint8_t devAddr, uint8_t length){
+int_8 readByte(uint8_t devAddr, uint8_t *data){
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print("I2C (0x");
+        Serial.print(devAddr, HEX);
+        Serial.print(") reading byte...");
+    #endif
 
+    int8_t count = 0;
+
+    #if (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE)
+        #if (ARDUINO < 100)
+            // Arduino v00xx (before v1.0), Wire library
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 1);
+
+            if(Wire.available()) {
+                data = Wire.receive();
+                #ifdef I2CDEV_SERIAL_DEBUG
+                    Serial.print(data, HEX);
+                #endif
+                count++;
+            }
+            Wire.endTransmission();
+        #elif (ARDUINO == 100)
+            // Arduino v1.0.0, Wire library
+            // Adds standardized write() and read() stream methods instead of send() and receive()
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 1);
+
+            if(Wire.available()) {
+                data = Wire.read();
+                #ifdef I2CDEV_SERIAL_DEBUG
+                    Serial.print(data, HEX);
+                #endif
+                count++;
+            }
+            Wire.endTransmission();
+        #elif (ARDUINO > 100)
+            // Arduino v1.0.1+, Wire library
+            // Adds official support for repeated start condition, yay!
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 1);
+
+            if(Wire.available()) {
+                data = Wire.read();
+                #ifdef I2CDEV_SERIAL_DEBUG
+                    Serial.print(data, HEX);
+                #endif
+                count++;
+            }
+        #endif
+
+    #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
+        // Fastwire library
+        // no loop required for fastwire
+        uint8_t status = Fastwire::readBuf(devAddr << 1, devAddr, data, 1);
+        if (status == 0) count = 1;  // success
+        else             count = -1; // error
+    #endif
+
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print(". Done (");
+        Serial.print(count, DEC);
+        Serial.println(" read).");
+    #endif
+
+    return count;
+}
+
+/** Read two bytes from MS5611
+ * @param devAddr I2C slave device address
+ * @param data Container for word value read from device
+ * @return Number of words read (-1 indicates failure)
+ */
+int_8 readWord(uint16_t devAddr, uint16_t *data){
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print("I2C (0x");
+        Serial.print(devAddr, HEX);
+        Serial.print(") reading word...");
+    #endif
+
+    int8_t count = 0;
+
+    #if (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE)
+        #if (ARDUINO < 100)
+            // Arduino v00xx (before v1.0), Wire library
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
+
+            if(Wire.available()) data = Wire.receive() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) data |= Wire.receive();    // second byte is bits  7-0 (LSb=0)
+            #ifdef I2CDEV_SERIAL_DEBUG
+                Serial.print(data, HEX);
+            #endif
+            count++;
+            Wire.endTransmission();
+        #elif (ARDUINO == 100)
+            // Arduino v1.0.0, Wire library
+            // Adds standardized write() and read() stream methods instead of send() and receive()
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
+
+            if(Wire.available()) data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
+            #ifdef I2CDEV_SERIAL_DEBUG
+                Serial.print(data, HEX);
+            #endif
+            count++;
+            Wire.endTransmission();
+        #elif (ARDUINO > 100)
+            // Arduino v1.0.1+, Wire library
+            // Adds official support for repeated start condition, yay!
+            Wire.beginTransmission(devAddr);
+            Wire.endTransmission();
+            Wire.beginTransmission(devAddr);
+            Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
+
+            if(Wire.available()) data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
+            #ifdef I2CDEV_SERIAL_DEBUG
+                Serial.print(data, HEX);
+            #endif
+            count++;
+            Wire.endTransmission();
+        #endif
+
+    #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
+        // Fastwire library
+        // no loop required for fastwire
+        uint8_t intermediate[2];
+        uint8_t status = Fastwire::readBuf(devAddr << 1, devAddr, intermediate, 2);
+        if (status == 0) {
+            count = 1; // success
+            data = ((uint16_t)intermediate[0] << 8) | intermediate[1];
+        }
+        else count = -1; // error
+    #endif
+
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print(". Done (");
+        Serial.print(count, DEC);
+        Serial.println(" read).");
+    #endif
+
+    return count;
 }
 
 /** The Reset sequence shall be sent once after power-on to make sure that

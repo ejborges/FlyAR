@@ -90,7 +90,8 @@ public:
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
     bool writeByte(uint8_t devAddr, uint8_t data);
-    bool readByte(uint8_t devAddr);
+    int_8 readByte(uint8_t devAddr, uint8_t *data);
+    int_8 readWord(uint16_t devAddr, uint16_t *data);
 
     // I2C commands
     void reset();
