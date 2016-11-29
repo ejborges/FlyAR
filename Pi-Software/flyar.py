@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 # Handle logging FIRST
 import logging
-logging.basicConfig(filename='flyar.log', level=logging.INFO)
+logging.basicConfig(filename='/var/tmpflyar/flyar.log', level=logging.INFO)
 
 from sense_hat import SenseHat
 import pi3d
@@ -11,6 +11,7 @@ from picamera import PiCamera
 from configparser import read_config
 from dataretriever import FlyARData
 import math
+from time import time
 
 DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,1.0), layer=3)
 
@@ -29,7 +30,7 @@ for shape in shapesToDraw:
     ringRots = 12 if shape.shapeType == 1 else 4
     newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.1)
     newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
-    logMessage = "Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
+    logMessage = str(time()) + ":[FLY-AR] Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
     logging.info(logMessage)
     pi3dShapes.append(newShape)
 
@@ -57,6 +58,7 @@ cameraY = 0
 cameraZ = 0
 
 sensorData = FlyARData()
+first = True
 while DISPLAY.loop_running():
     sensorData.update()
     CAMERA.reset()
@@ -65,28 +67,16 @@ while DISPLAY.loop_running():
     for text in objectNumbers:
         text.draw()
 
-    currentYaw = sensorData.yaw
-    currentPitch = sensorData.pitch
-    currentRoll = sensorData.roll
+    # If this is the first time, get the original values
+    if first:
+        ORIGINAL_YAW = sensorData.yaw
+        ORIGINAL_PITCH = sensorData.pitch
+        ORIGINAL_ROLL = sensorData.roll
+        first = False
 
-    if ORIGINAL_YAW == None:
-        # This is our first time through the loop. Just set our original values and return
-        ORIGINAL_YAW = previousYaw = currentYaw
-        ORIGINAL_PITCH = previousPitch = currentPitch
-        ORIGINAL_ROLL = previousRoll = currentRoll
-        continue
-
-    if abs(previousYaw - currentYaw) > .265389732:
-        cameraY = ORIGINAL_YAW - currentYaw
-        previousYaw = currentYaw
-
-    if abs(previousPitch - currentPitch) > .31902688:
-        cameraX = ORIGINAL_PITCH - currentPitch
-        previousPitch = currentPitch
-
-    if abs(previousRoll - currentRoll) > .14933539:
-        cameraZ = ORIGINAL_ROLL - currentRoll
-        previousRoll = currentRoll
+    cameraY = ORIGINAL_YAW - sensorData.yaw
+    cameraX = ORIGINAL_PITCH - sensorData.pitch
+    cameraZ = ORIGINAL_ROLL - sensorData.roll
 
     CAMERA.rotateY(cameraY)
     CAMERA.rotateX(cameraX)
