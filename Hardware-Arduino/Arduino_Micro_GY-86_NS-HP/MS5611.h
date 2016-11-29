@@ -72,11 +72,11 @@ THE SOFTWARE.
 
 //#define DEFINE_CONSTANTS
 #ifdef DEFINE_CONSTANTS
-    #define P_MIN_MBAR 1000
-    #define P_MAX_MBAR 120000
-    #define T_MIN_C (-4000)
-    #define T_MAX_C 8500
-    #define T_REF_C 2000
+    #define MS5611_P_MIN_MBAR 1000
+    #define MS5611_P_MAX_MBAR 120000
+    #define MS5611_T_MIN_C (-4000)
+    #define MS5611_T_MAX_C 8500
+    #define MS5611_T_REF_C 2000
 #endif
 
 class MS5611 {
@@ -87,6 +87,9 @@ public:
     void initialize();
     bool testConnection();
 
+    bool ADC_conversion_ready;
+    bool init_error;
+
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
     bool writeByte(uint8_t devAddr, uint8_t data);
@@ -94,11 +97,11 @@ public:
     int_8 readWord(uint16_t devAddr, uint16_t *data);
 
     // I2C commands
-    void reset();
-    void readPROM();
-    void D1Conversion();
-    void D2Conversion();
-    void readADCResult();
+    bool reset();
+    bool readPROM();
+    bool D1Conversion();
+    bool D2Conversion();
+    bool readADCResult();
 
     // calibration data from PROM
     uint16_t C1;    // Pressure sensitivity | SENS_T1
@@ -123,7 +126,7 @@ public:
     //int32_t P;      // Temperature compensated pressure (10...1200 mbar with 0.01 mbar resolution)
     //float P_float;  // 1000 <= P <= 120000; ex. 100009 = 1000.09 mbar
 
-    // calculation functions
+    // calculation functions; require PROM calibration data and current ADC conversion for D1 and/or D2
     int32_t getTempDifference_dT(); // Difference between actual and reference temperature; -16776960 <= dT <= 16777216
     int32_t getTemperature_int();   // Actual temperature (-40...85C with 0.01C resolution) -4000 <= TEMP <= 8500;
     float getTemperature_float();   // Actual temperature (-40...85C with 0.01C resolution) -40.00 <= TEMP <= 85.00;
@@ -135,15 +138,16 @@ public:
 
 private:
     uint8_t devAddr;
+    uint16_t MS5611_PROM[MS561101BA_PROM_REG_COUNT];
 
-    uint16_t MS5611Prom[MS561101BA_PROM_REG_COUNT];
+    uint16_t crc4();
 
     #ifndef DEFINE_CONSTANTS
-    const int32_t P_MIN_MBAR = 1000;
-    const int32_t P_MAX_MBAR = 120000;
-    const int32_t T_MIN_C = -4000;
-    const int32_t T_MAX_C = 8500;
-    const int32_t T_REF_C = 2000;
+    const int32_t MS5611_P_MIN_MBAR = 1000;
+    const int32_t MS5611_P_MAX_MBAR = 120000;
+    const int32_t MS5611_T_MIN_C = -4000;
+    const int32_t MS5611_T_MAX_C = 8500;
+    const int32_t MS5611_T_REF_C = 2000;
     #endif
 };
 
