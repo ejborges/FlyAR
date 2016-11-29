@@ -1,9 +1,10 @@
 #from serial import Serial
 import logging
-logging.basicConfig(filename='/var/tmpflyar/flyar.log', filemode='w', level=logging.WARN)
+logging.basicConfig(filename='/var/tmpflyar/flyar.log', filemode='w', level=logging.INFO)
 from sense_hat import SenseHat
 from sysv_ipc import SharedMemory, IPC_CREX
 from time import time
+from smclear import padString
 
 #ser = Serial("/dev/ttyAMA0")
 #ser.baudrate = 115200
@@ -17,11 +18,14 @@ zAccelMem = SharedMemory(None, IPC_CREX)
 rollMem = SharedMemory(None, IPC_CREX)
 pitchMem = SharedMemory(None, IPC_CREX)
 yawMem = SharedMemory(None, IPC_CREX)
+rollDegMem = SharedMemory(None, IPC_CREX)
+pitchDegMem = SharedMemory(None, IPC_CREX)
+yawDegMem = SharedMemory(None, IPC_CREX)
 currentTime = time()
 
 # Store the shared memory locations to a file
 with open('/var/tmpflyar/raw_shared_memory_keys.flyar', 'wb') as f:
-    sharedMemoryKeys = '{},{},{},{},{},{}\n'.format(xAccelMem.key, yAccelMem.key, zAccelMem.key, rollMem.key, pitchMem.key, yawMem.key)
+    sharedMemoryKeys = '{},{},{},{},{},{},{},{},{}\n'.format(xAccelMem.key, yAccelMem.key, zAccelMem.key, rollMem.key, pitchMem.key, yawMem.key, rollDegMem.key, pitchDegMem.key, yawDegMem.key)
     logging.info(str(currentTime) + ':[SERIAL-READER] Storing the following shared memory keys to /var/tmpflyar/raw_shared_memory_keys.flyar: {}'.format(sharedMemoryKeys))
     f.write(str.encode(sharedMemoryKeys))
 
@@ -40,19 +44,16 @@ while True:
     # sample block of adding to shared memory
     accel = sense.get_accelerometer_raw()
     orien = sense.get_orientation_radians()
-    xAccelMem.write(str(accel['x']).encode())
-    yAccelMem.write(str(accel['y']).encode())
-    zAccelMem.write(str(accel['z']).encode())
-    rollMem.write(str(orien['roll']).encode())
-    pitchMem.write(str(orien['pitch']).encode())
-    yawMem.write(str(orien['yaw']).encode())
-    currentTime = time()
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the X Shared Memory location'.format(str(accel['x'])))
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the Z Shared Memory location'.format(str(accel['z'])))
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the ROLL Shared Memory location'.format(str(orien['roll'])))
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the PITCH Shared Memory location'.format(str(orien['pitch'])))
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the YAW Shared Memory location'.format(str(orien['yaw'])))
-    logging.info(str(currentTime) + ':[SERIAL-READER] Just wrote {} to the Y Shared Memory location'.format(str(accel['y'])))
+    orienDeg = sense.get_orientation_degrees()
+    xAccelMem.write(padString(str(accel['x'])).encode())
+    yAccelMem.write(padString(str(accel['y'])).encode())
+    zAccelMem.write(padString(str(accel['z'])).encode())
+    rollMem.write(padString(str(orien['roll'])).encode())
+    pitchMem.write(padString(str(orien['pitch'])).encode())
+    yawMem.write(padString(str(orien['yaw'])).encode())
+    rollDegMem.write(padString(str(orienDeg['roll'])).encode())
+    pitchDegMem.write(padString(str(orienDeg['pitch'])).encode())
+    yawDegMem.write(padString(str(orienDeg['yaw'])).encode())
 
     # Let's do it again!
 
