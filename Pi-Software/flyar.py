@@ -46,6 +46,9 @@ for shape in shapesToDraw:
 
 
 
+#Let's have a cow
+cow = pi3d.Model(file_string='cow.obj', name='cow', z=-5.0)
+
 # Fetch key presses
 mykeys = pi3d.Keyboard()
 
@@ -70,6 +73,8 @@ while DISPLAY.loop_running():
         shape.draw()
     for text in objectNumbers:
         text.draw()
+
+    cow.draw()
 
     # If this is the first time, get the original values
     if first:
