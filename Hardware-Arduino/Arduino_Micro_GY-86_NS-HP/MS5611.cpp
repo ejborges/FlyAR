@@ -68,6 +68,7 @@ THE SOFTWARE.
  */
 MS5611::MS5611() {
     MS5611::devAddr = MS5611_DEFAULT_ADDRESS;
+    MS5611::MS5611_initialized = false;
 }
 
 /** Specific address constructor.
@@ -78,6 +79,7 @@ MS5611::MS5611() {
  */
 MS5611::MS5611(uint8_t address) {
     MS5611::devAddr = address;
+    MS5611::MS5611_initialized = false;
 }
 
 /** Power on and prepare for general usage.
@@ -98,16 +100,24 @@ void MS5611::initialize() {
     MS5611::reading_D1_conversion = true;
     MS5611::ADC_conversion_in_progress = false;
     MS5611::init_error = false;
+    MS5611::MS5611_initialized = true;
 }
 
-/** Verify the I2C connection and reasonable pressure reading
+/** Verify the I2C connection and determine if pressure reading is reasonable (within bounds of 10.00 and 1200.00 mbar)
  * Make sure the device is connected and responds as expected.
  * @return True if connection is valid, false otherwise
  */
 bool MS5611::testConnection() {
-    if(MS5611::init_error) return false;
-    // TODO read pressure
-    return false;
+    if(MS5611::init_error || !(MS5611::MS5611_initialized)) return false;
+    
+    if(!(initiateD1Conversion(MS5611_OSR_256))) return false;
+    while(!(readADCResult())){}
+    if(!(initiateD2Conversion(MS5611_OSR_256))) return false;
+    while(!(readADCResult())){}
+    int32_t testPressure = getPressure_int();
+    if((testPressure < MS5611_P_MIN_MBAR) || (testPressure > MS5611_P_MAX_MBAR)) return false;
+
+    return true;
 }
 
 /** Calculate 4-bit CRC from 128-bit PROM

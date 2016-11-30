@@ -165,6 +165,7 @@ private:
     uint16_t osr_adc_time_us; // safeguard microsecond time for ADC completion for given OSR value (see OSR #defines)
 
     // status flags
+    bool MS5611_initialized;
     bool reading_D1_conversion;
     bool ADC_conversion_in_progress;
     bool init_error;
