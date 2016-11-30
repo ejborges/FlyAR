@@ -53,6 +53,7 @@ void MainWindow::open()
 
 void MainWindow::save()
 {
+    updateTable();
     saveFile();
 }
 
@@ -193,6 +194,7 @@ void MainWindow::createMenus()
 
 bool MainWindow::maybeSave()
 {
+    updateTable();
     if (flyAR->isModified()) {
        QMessageBox::StandardButton ret;
        ret = QMessageBox::warning(this, tr("FlyAR"),
