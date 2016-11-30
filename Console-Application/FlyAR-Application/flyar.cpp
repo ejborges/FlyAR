@@ -10,7 +10,7 @@ FlyAR::FlyAR(QWidget *parent) :
     objHeight = 1.0f;
     objType = 1;
     objRadius = 20.0f;
-    drawQuad();
+    initializeScreen();
 }
 
 bool FlyAR::openImage(const QString &fileName)
@@ -49,22 +49,31 @@ void FlyAR::clearImage()
     image.fill(qRgb(255, 255, 255));
     objCount = 0; //reset the counter
     objVec.clear(); //empty the vector
-    drawQuad();
+    initializeScreen();
     modified = true;
     update();
 }
 
 void FlyAR::mousePressEvent(QMouseEvent *event)
-{
+{    
     if (event->button() == Qt::LeftButton) {
         bool ok, shape, rad = false;
         lastPoint = event->pos();
-        float x_pos = (lastPoint.x()-400+(objRadius/2.0f))/40.0f;
-        float y_pos = (533-lastPoint.y()+(objRadius/2.0f))/53.3f;
+        float x_pos = (lastPoint.x()-410+(objRadius/2.0f))/40.0f;
+        float y_pos = (500-lastPoint.y()+(objRadius/2.0f))/50.0f;
+
+        if ((abs(x_pos) < 1.30f && y_pos < 1.0f))
+        {
+            QMessageBox::warning(this, tr("Warning"),
+                    tr("Can't place here. You are trying to place \n"
+                       "an object that will overlay the starting location\n"
+                       " of the vehicle."), QMessageBox::Ok);
+            return;
+        }
 
         for (vector<obj>::iterator it = objVec.begin(); it != objVec.end(); ++it)
         {
-            if (abs(it->x - x_pos) < 0.5f && abs(it->y - y_pos) < 0.5f)
+            if (abs(it->x - x_pos) < 1.0f && abs(it->y - y_pos) < 1.0f)
             {
                 QMessageBox::warning(this, tr("Warning"),
                         tr("Can't place here. You are trying to place \n"
@@ -72,6 +81,14 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                            "Try spreading your objects out more."), QMessageBox::Ok);
                 return;
             }
+        }
+
+        if ((abs(x_pos) > 9.5f || y_pos < 0.55f || y_pos > 9.85f))
+        {
+            QMessageBox::warning(this, tr("Warning"),
+                    tr("Can't place here. You are trying to place \n"
+                       "an object that will be displayed off the screen.\n"), QMessageBox::Ok);
+            return;
         }
 
         objType = QInputDialog::getInt(this, tr("FlyAR"),
@@ -92,7 +109,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                                                     10, 30, 2, &rad);
                 if (rad) //if the user cancels at anytime, cancel the drawing of the object
                 {
-                    drawObj(event->pos());
+                    drawObj(lastPoint);
 
                     objVec.push_back(obj());
 
@@ -111,6 +128,49 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
         }
 
         scribbling = true;
+    }
+}
+
+void FlyAR::removeLastItem()
+{
+    if (objCount > 0)
+    {
+        QColor currentPenColor = penColor();
+        setPenColor(Qt::white);
+        setPenWidth(20);
+        objRadius = objVec[objCount-1].radius*50.0f;
+        objType = objVec[objCount-1].type;
+        lastPoint.setX((objVec[objCount-1].x*40)+410-(objRadius/2));
+        lastPoint.setY(500+(objRadius/2)-(objVec[objCount-1].y*50));
+        drawObj(lastPoint);
+        setPenColor(currentPenColor);
+        setPenWidth(3);
+        objVec.pop_back();
+        --objCount;
+    }
+}
+
+void FlyAR::removeElement()
+{
+    bool ok;
+    int objElement = QInputDialog::getInt(this, tr("FlyAR"),
+                                        tr("Which element do you want to remove:"),
+                                        objCount,
+                                        1, objCount, 1, &ok);
+    if (ok && (objElement-1 < objCount)) //if the user cancels at anytime, cancel the drawing of the object
+    {
+        QColor currentPenColor = penColor();
+        setPenColor(Qt::white);
+        setPenWidth(20);
+        objRadius = objVec[objElement-1].radius*50.0f;
+        objType = objVec[objElement-1].type;
+        lastPoint.setX((objVec[objElement-1].x*40)+410-(objRadius/2));
+        lastPoint.setY(500+(objRadius/2)-(objVec[objElement-1].y*50));
+        drawObj(lastPoint);
+        setPenColor(currentPenColor);
+        setPenWidth(3);
+        objVec.erase(objVec.begin()+(objElement-1));
+        --objCount;
     }
 }
 
@@ -155,8 +215,8 @@ void FlyAR::drawObj(const QPoint &endPoint)
 
         modified = true;
 
-        int rad = (myPenWidth / 2) + 2;
-        update(QRect(endPoint.x(), endPoint.y(), 25, 25).normalized()
+        int rad = myPenWidth;
+        update(QRect(endPoint.x(), endPoint.y(), objRadius, objRadius).normalized()
                                          .adjusted(-rad, -rad, +rad, +rad));
 
 
@@ -187,19 +247,23 @@ void FlyAR::writeToFile(QString theFileName)
     file.close();
 }
 
-void FlyAR::drawQuad()
+void FlyAR::initializeScreen()
 {
-    QImage newImage(QSize(820,800), QImage::Format_RGB32);
-    newImage.fill(qRgb(255, 255, 255));
-    image = newImage;
+    if (image.size().isEmpty())
+    {
+        QImage newImage(QSize(820,800), QImage::Format_RGB32);
+        newImage.fill(qRgb(255, 255, 255));
+        image = newImage;
+    }
+
     QPainter painter(&image);
     myPenColor = Qt::black;
-    myPenWidth = 5;
+    myPenWidth = 3;
     painter.setPen(QPen(myPenColor, myPenWidth, Qt::SolidLine, Qt::RoundCap,
                             Qt::RoundJoin));
 
-    painter.drawText(QRectF(400, 475, 80, 20),"QUAD");
-    QRectF rectangle(375.0, 470.0, 80.0, 100.0);
+    painter.drawText(QRectF(386, 484, 60, 20),"QUAD");
+    QRectF rectangle(370.0, 480.0, 60.0, 80.0);
     int startAngle = 30 * 16;
     int spanAngle = 120 * 16;
     painter.drawChord(rectangle, startAngle, spanAngle);

@@ -35,6 +35,9 @@ public:
     void setPenColor(const QColor &newColor);
     void setPenWidth(int newWidth);
     void setNewHeight(int newHeight);
+    void removeLastItem();
+    void FlyAR::removeElement();
+    void initializeScreen();
 
     bool isModified() const { return modified; }
     QColor penColor() const { return myPenColor; }
@@ -53,7 +56,6 @@ private:
     void drawObj(const QPoint &endPoint);
     void resizeImage(QImage *image, const QSize &newSize);
     void writeToFile(QString theFileName);
-    void drawQuad();
 
     bool modified;
     bool scribbling;

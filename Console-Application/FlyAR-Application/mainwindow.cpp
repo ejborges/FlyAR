@@ -45,7 +45,10 @@ void MainWindow::open()
     QString fileName = QFileDialog::getOpenFileName(this,
                                tr("Open File"), QDir::currentPath());
     if (!fileName.isEmpty())
+    {
         flyAR->openImage(fileName);
+        flyAR->initializeScreen();
+    }
 }
 
 void MainWindow::save()
@@ -53,10 +56,25 @@ void MainWindow::save()
     saveFile();
 }
 
+void MainWindow::undoFunc()
+{
+    flyAR->removeLastItem();
+    updateTable();
+}
+
+void MainWindow::removeFunc()
+{
+    updateTable();
+    flyAR->removeElement();
+    updateTable();
+}
+
 void MainWindow::updateTable()
 {
     objTable->clearContents();
     int objCounter = 0;
+    objTable->setRowCount(objCounter);
+
     for (vector<FlyAR::obj>::iterator it = flyAR->objVec.begin(); it != flyAR->objVec.end(); ++it)
     {
         if (objCounter >= objTable->rowCount()) objTable->insertRow(objCounter); //only insert new rows if needed
@@ -103,8 +121,8 @@ void MainWindow::about()
                "and then add a value between 1-15 which represents the height of the object "
                "off the ground.  You will also have to specify the radius of the object "
                "that you selected. "
-               "The data of each position will be stored in a comma separated file that "
-               "is determined in the constructor of the FlyAR source file</p> "));
+               "The data of each position will be stored in a comma separated file "
+               "that's location is specified by you, the user.</p> "));
 }
 
 void MainWindow::createActions()
@@ -121,6 +139,14 @@ void MainWindow::createActions()
     exitAct->setShortcuts(QKeySequence::Quit);
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
+    undoAct = new QAction(tr("&Undo Last Entry"), this);
+    undoAct->setShortcut(tr("Ctrl+Z"));
+    connect(undoAct, SIGNAL(triggered()), this, SLOT(undoFunc()));
+
+    removeAct = new QAction(tr("&Remove Element"), this);
+    removeAct->setShortcut(tr("Ctrl+D"));
+    connect(removeAct, SIGNAL(triggered()), this, SLOT(removeFunc()));
+
     updateTableAct = new QAction(tr("&Update Table Values"), this);
     updateTableAct->setShortcut(tr("Ctrl+U"));
     connect(updateTableAct, SIGNAL(triggered()), this, SLOT(updateTable()));
@@ -128,13 +154,10 @@ void MainWindow::createActions()
     penColorAct = new QAction(tr("&Pen Color..."), this);
     connect(penColorAct, SIGNAL(triggered()), this, SLOT(penColor()));
 
-    penWidthAct = new QAction(tr("Pen &Width..."), this);
-    connect(penWidthAct, SIGNAL(triggered()), this, SLOT(penWidth()));
-
     clearScreenAct = new QAction(tr("&Clear Screen"), this);
     clearScreenAct->setShortcut(tr("Ctrl+L"));
     connect(clearScreenAct, SIGNAL(triggered()),
-            flyAR, SLOT(clearImage()));
+            this, SLOT(clearImage()));
 
     aboutAct = new QAction(tr("&About"), this);
     connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
@@ -152,9 +175,10 @@ void MainWindow::createMenus()
     fileMenu->addAction(exitAct);
 
     optionMenu = new QMenu(tr("&Options"), this);
+    optionMenu->addAction(undoAct);
+    optionMenu->addAction(removeAct);
     optionMenu->addAction(updateTableAct);
     optionMenu->addAction(penColorAct);
-    optionMenu->addAction(penWidthAct);
     optionMenu->addSeparator();
     optionMenu->addAction(clearScreenAct);
 
@@ -198,4 +222,10 @@ bool MainWindow::saveFile()
 
         return flyAR->saveImage(fileName);
     }
+}
+
+void MainWindow::clearImage()
+{
+    flyAR->clearImage();
+    updateTable();
 }

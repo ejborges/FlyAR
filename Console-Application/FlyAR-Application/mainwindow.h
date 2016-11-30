@@ -21,10 +21,13 @@ protected:
 private slots:
     void open();
     void save();
+    void undoFunc();
+    void removeFunc();
     void updateTable();
     void penColor();
     void penWidth();
     void about();
+    void clearImage();
 
 private:
     void createActions();
@@ -43,6 +46,8 @@ private:
     QAction *openAct;
     QAction *saveAct;
     QAction *exitAct;
+    QAction *undoAct;
+    QAction *removeAct;
     QAction *updateTableAct;
     QAction *penColorAct;
     QAction *penWidthAct;
