@@ -6,9 +6,9 @@ from accelerationcalculator import getFilteredAcceleration
 from sysv_ipc import SharedMemory, IPC_CREX
 from math import degrees
 from smclear import padString
+import gc
 
 previousTime = None
-
 xAccelMem = None
 yAccelMem = None
 zAccelMem = None
@@ -113,17 +113,17 @@ while True:
     newPitchRad = previousPitchRad
     newYawDeg = previousYawDeg
     newYawRad = previousYawRad
-    if abs(rollDeg - previousRollDeg) > .24933539:
-        newRollDeg = rollDeg
-        newRollRad = rollRad
+    #if abs(rollDeg - previousRollDeg) > .24933539:
+    newRollDeg = rollDeg
+    newRollRad = rollRad
 
-    if abs(pitchDeg - previousPitchDeg) > .31902688:
-        newPitchDeg = pitchDeg
-        newPitchRad = pitchRad
+    #if abs(pitchDeg - previousPitchDeg) > .31902688:
+    newPitchDeg = pitchDeg
+    newPitchRad = pitchRad
 
-    if abs(yawDeg - previousYawDeg) > .365389732:
-        newYawDeg = yawDeg
-        newYawRad = yawRad
+    #if abs(yawDeg - previousYawDeg) > .365389732:
+    newYawDeg = yawDeg
+    newYawRad = yawRad
     
     filteredAcceleration = getFilteredAcceleration(xAccel, yAccel, zAccel, newRollRad, newPitchRad, newYawRad)
     
@@ -141,12 +141,12 @@ while True:
     zPosition += positionChangeZ
 
     # Store the data in the calculated shared memory
-    xPosMem.write(padString(str(xPosition)).encode())
-    yPosMem.write(padString(str(yPosition)).encode())
-    zPosMem.write(padString(str(zPosition)).encode())
-    rollDegMemTo.write(padString(str(newRollDeg)).encode())
-    pitchDegMemTo.write(padString(str(newPitchDeg)).encode())
-    yawDegMemTo.write(padString(str(newYawDeg)).encode())
+    xPosMem.write(padString("{0:.4f}".format(xPosition)).encode())
+    yPosMem.write(padString("{0:.4f}".format(yPosition)).encode())
+    zPosMem.write(padString("{0:.4f}".format(zPosition)).encode())
+    rollDegMemTo.write(padString("{0:.4f}".format(newRollDeg)).encode())
+    pitchDegMemTo.write(padString("{0:.4f}".format(newPitchDeg)).encode())
+    yawDegMemTo.write(padString("{0:.4f}".format(newYawDeg)).encode())
 
     previousRollDeg = rollDeg
     previousRollRad = rollRad
@@ -154,5 +154,11 @@ while True:
     previousPitchRad = pitchRad
     previousYawDeg = yawDeg
     previousYawRad = yawRad
+
+    del positionChangeX
+    del positionChangeY
+    del positionChangeZ
+    del timeDelta
+    gc.collect()
 
     # Do it again!

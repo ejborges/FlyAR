@@ -22,10 +22,11 @@ class FlyARData(object):
         respective properties to get updated values
         '''
         if not self._haveSharedMemKeys:
+            print("I DO NOT HAVE KEYS")
             # Get the shared memory keys from the file
             with open('/var/tmpflyar/formatted_shared_memory_keys.flyar', 'r') as f:
                 for line in f:
-                    self._haveSharedMemoryKeys = True
+                    self._haveSharedMemKeys = True
                     values = line.strip().split(',')
                     self._xPosMem = SharedMemory(int(values[0]))
                     self._yPosMem = SharedMemory(int(values[1]))

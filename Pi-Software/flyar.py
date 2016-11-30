@@ -11,14 +11,18 @@ from picamera import PiCamera
 from configparser import read_config
 from dataretriever import FlyARData
 import math
+import gc
 from time import time
 
-DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,1.0), layer=3)
+USE_CAMERA = False
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,0.0), layer=3)
 
 shapesToDraw = read_config()
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
-#piCamera = PiCamera()
-#piCamera.start_preview()
+
+if USE_CAMERA:
+    piCamera = PiCamera()
+    piCamera.start_preview()
 
 # Create pi3d shapes based on the config information
 pi3dShapes = []
@@ -82,10 +86,13 @@ while DISPLAY.loop_running():
     CAMERA.rotateX(cameraX)
     CAMERA.rotateZ(cameraZ)
 
+    gc.collect()
+
     k = mykeys.read()
     
     if k == 27:
         mykeys.close()
-#        piCamera.stop_preview()
+        if USE_CAMERA:
+            piCamera.stop_preview()
         DISPLAY.destroy()
         break

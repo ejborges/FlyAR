@@ -5,6 +5,7 @@ from sense_hat import SenseHat
 from sysv_ipc import SharedMemory, IPC_CREX
 from time import time
 from smclear import padString
+import gc
 
 #ser = Serial("/dev/ttyAMA0")
 #ser.baudrate = 115200
@@ -45,15 +46,17 @@ while True:
     accel = sense.get_accelerometer_raw()
     orien = sense.get_orientation_radians()
     orienDeg = sense.get_orientation_degrees()
-    xAccelMem.write(padString(str(accel['x'])).encode())
-    yAccelMem.write(padString(str(accel['y'])).encode())
-    zAccelMem.write(padString(str(accel['z'])).encode())
-    rollMem.write(padString(str(orien['roll'])).encode())
-    pitchMem.write(padString(str(orien['pitch'])).encode())
-    yawMem.write(padString(str(orien['yaw'])).encode())
-    rollDegMem.write(padString(str(orienDeg['roll'])).encode())
-    pitchDegMem.write(padString(str(orienDeg['pitch'])).encode())
-    yawDegMem.write(padString(str(orienDeg['yaw'])).encode())
+    xAccelMem.write(padString("{0:.4f}".format(accel['x'])).encode())
+    yAccelMem.write(padString("{0:.4f}".format(accel['y'])).encode())
+    zAccelMem.write(padString("{0:.4f}".format(accel['z'])).encode())
+    rollMem.write(padString("{0:.4f}".format(orien['roll'])).encode())
+    pitchMem.write(padString("{0:.4f}".format(orien['pitch'])).encode())
+    yawMem.write(padString("{0:.4f}".format(orien['yaw'])).encode())
+    rollDegMem.write(padString("{0:.4f}".format(orienDeg['roll'])).encode())
+    pitchDegMem.write(padString("{0:.4f}".format(orienDeg['pitch'])).encode())
+    yawDegMem.write(padString("{0:.4f}".format(orienDeg['yaw'])).encode())
+
+    gc.collect()
 
     # Let's do it again!
 
