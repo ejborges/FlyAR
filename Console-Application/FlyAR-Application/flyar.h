@@ -8,7 +8,9 @@
 #include <QPoint>
 #include <QFile>
 #include <QTextStream>
+#include <cmath>
 #include <vector>
+#include <QStaticText>
 
 using namespace std;
 
@@ -16,6 +18,7 @@ class FlyAR : public QWidget
 {
     Q_OBJECT
 public:
+
     FlyAR(QWidget *parent = 0);
 
     struct obj {
@@ -50,6 +53,7 @@ private:
     void drawObj(const QPoint &endPoint);
     void resizeImage(QImage *image, const QSize &newSize);
     void writeToFile(QString theFileName);
+    void drawQuad();
 
     bool modified;
     bool scribbling;

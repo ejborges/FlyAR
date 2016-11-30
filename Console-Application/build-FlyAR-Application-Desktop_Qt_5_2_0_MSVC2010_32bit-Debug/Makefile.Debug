@@ -63,22 +63,22 @@ DESTDIR_TARGET = debug\FlyAR-Application.exe
 
 .SUFFIXES: .c .cpp .cc .cxx
 
-{.}.cpp{debug\}.obj::
+{..\FlyAR-Application}.cpp{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{.}.cc{debug\}.obj::
+{..\FlyAR-Application}.cc{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{.}.cxx{debug\}.obj::
+{..\FlyAR-Application}.cxx{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{.}.c{debug\}.obj::
+{..\FlyAR-Application}.c{debug\}.obj::
 	$(CC) -c $(CFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
@@ -103,22 +103,22 @@ DESTDIR_TARGET = debug\FlyAR-Application.exe
 	$<
 <<
 
-{..\FlyAR-Application}.cpp{debug\}.obj::
+{.}.cpp{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{..\FlyAR-Application}.cc{debug\}.obj::
+{.}.cc{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{..\FlyAR-Application}.cxx{debug\}.obj::
+{.}.cxx{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
 
-{..\FlyAR-Application}.c{debug\}.obj::
+{.}.c{debug\}.obj::
 	$(CC) -c $(CFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<

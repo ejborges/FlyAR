@@ -7,7 +7,6 @@ MainWindow::MainWindow()
     flyAR = new FlyAR;
     objTable = new QTableWidget(0, 8);
     objTable->setHorizontalHeaderLabels(QString("Type,Red,Green,Blue,X-Pos,Y-Pos,Z-Pos,Radius").split(","));
-
     createActions();
     createMenus();
     QWidget *central = new QWidget(0); // a central widget.
@@ -28,7 +27,7 @@ MainWindow::MainWindow()
     setCentralWidget(central);
 
     setWindowTitle(tr("FlyAR"));
-    setFixedSize(800, 800);
+    setFixedSize(820, 800);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
