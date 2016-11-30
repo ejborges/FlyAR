@@ -36,6 +36,7 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 //#include "MPU6050.h" // not necessary if using MotionApps include file
 #include "HMC5883L.h"
+#include "MS5611.h"
 #include "FlyAR.h"
 
 
@@ -46,11 +47,14 @@
 #define LED_PIN LED_BUILTIN
 bool blinkState = false;
 
-// class default I2C address is 0x68
+// MPU6050 class default I2C address is 0x68
 MPU6050 mpu;
 
-// class default I2C address is 0x1E
+// HMC5883L class default I2C address is 0x1E
 HMC5883L mag;
+
+// MS5611 class default I2C address is 0x77
+MS5611 baro;
 
 // uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
 // pitch/roll angles (in degrees) calculated from the quaternions coming
@@ -66,10 +70,12 @@ HMC5883L mag;
 #define OUTPUT_READABLE_WORLDACCEL
 
 #define OUTPUT_READABLE_MAGNETOMETER
-
 #define OUTPUT_READABLE_HEADING
 
-// MPU control/status vars
+#define OUTPUT_READABLE_PRESSURE
+#define OUTPUT_READABLE_TEMPERATURE
+
+// MPU6050 control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
@@ -77,7 +83,7 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
-// orientation/motion vars
+// MPU6050 orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
@@ -87,24 +93,31 @@ int16_t gyro[3];        //To store gyro's measures
 int16_t mx, my, mz;     //To store magnetometer readings
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-float heading;          // Simple magnetic heading. (NOT COMPENSATED FOR PITCH AND ROLL)
 
-// To check DMP frecuency  (it can be changed it the MotionApps v2 .h file)
+// To check MPU6050 DMP frecuency  (it can be changed it the MotionApps v2 .h file)
 int time1,time1old;
 float frec1;
+
+// HMC5883L values
+float heading_uncompensated;          // Simple magnetic heading. (NOT COMPENSATED FOR PITCH AND ROLL)
+
+// MS5611 values
+bool received_D1_conversion = false;
+float pressure_mbar = 0.0;
+float temperature_c = 0.0;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
 // ================================================================
 
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-volatile bool ms5611Interrupt = false;     // indicates whether MPU interrupt pin has gone low
+//volatile bool ms5611Interrupt = false;     // indicates whether MPU interrupt pin has gone low
 void dmpDataReady() {
   mpuInterrupt = true;
 }
-void ms5611DataReady() {
-  ms5611Interrupt = true;
-}
+//void ms5611DataReady() {
+//  ms5611Interrupt = true;
+//}
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
@@ -116,14 +129,25 @@ void setup() {
   
   #ifdef serial_out
   Serial.begin(115200);
+  #endif
+
+  // wait for ready
+  Serial.println(F("\nSend any character to begin:"));
+  while (Serial.available() && Serial.read()); // empty buffer
+  while (!Serial.available());                 // wait for data
+  while (Serial.available() && Serial.read()); // empty buffer again
+
+  #ifdef serial_out
   Serial.println(F("Initializing I2C devices..."));
   #endif
   mpu.initialize();
+  baro.initialize();
 
   #ifdef serial_out
   // verify connection
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  Serial.println(baro.testConnection() ? F("MS5611 connection successful") : F("MS5611 connection failed"));
 
   // wait for ready
   Serial.println(F("\nSend any character to begin DMP programming: "));
@@ -156,8 +180,6 @@ void setup() {
   mpu.setI2CBypassEnabled(true);
 
   mag.initialize();
-
-
 
   // disable i2c master bypass mode
   mpu.setI2CBypassEnabled(false);
@@ -208,7 +230,7 @@ void setup() {
 
     // enable Arduino interrupt detection
     #ifdef serial_out
-    Serial.println(F("Enabling interrupt detection..."));
+    Serial.println(F("Enabling MPU6050 interrupt detection..."));
     #endif
     //enable interrupt INT2 (physical pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
     //jump to the dmpDataReady function on rising edge
@@ -216,7 +238,7 @@ void setup() {
 
     //enable interrupt INT3 (physical pin 21, PD3) connected to the DRDY pin from the MS5611 on the GY-86
     //jump to the ms5611DataReady function on falling edge
-    attachInterrupt(MS5611_INTERRUPT_PIN, ms5611DataReady, FALLING);
+    //attachInterrupt(MS5611_INTERRUPT_PIN, ms5611DataReady, FALLING);
 
     mpuIntStatus = mpu.getIntStatus();
 
@@ -377,14 +399,23 @@ void loop() {
   while (!mpuInterrupt && fifoCount < packetSize) {
     // other program behavior stuff here
     // .
-    // .
-    // .
     // if you are really paranoid you can frequently test in between other
     // stuff to see if mpuInterrupt is true, and if so, "break;" from the
     // while() loop to immediately process the MPU data
     // .
-    // .
-    // .
+
+    if(received_D1_conversion && baro.readADCResult()){
+        received_D1_conversion = false;
+        pressure_mbar = baro.getPressure_float();
+        temperature_c = baro.getTemperature_float();
+    }
+    else{
+        baro.initiateD1Conversion(MS5611_OSR_4096);
+        if(baro.readADCResult()){
+            received_D1_conversion = true;
+            baro.initiateD2Conversion(MS5611_OSR_4096);
+        }
+    }
   }
 
   // reset interrupt flag and get INT_STATUS byte
@@ -503,13 +534,23 @@ void loop() {
     mz=mpu.getExternalSensorWord(4);
 
     // calculate heading in degrees. 0 degree indicates North
-    heading = atan2(my, mx);
-    if(heading < 0) heading += 2 * M_PI;
+    heading_uncompensated = atan2(my, mx);
+    if(heading_uncompensated < 0) heading_uncompensated += 2 * M_PI;
 
     #ifdef serial_out
     Serial.print("heading:\t");
-    Serial.println(heading * 180/M_PI);
+    Serial.println(heading_uncompensated * 180/M_PI);
     #endif //serial_out
+    #endif
+
+    #if defined(OUTPUT_READABLE_PRESSURE) && defined(serial_out)
+    Serial.print("pressure:\t");
+    Serial.println(pressure_mbar);
+    #endif
+
+    #if defined(OUTPUT_READABLE_TEMPERATURE) && defined(serial_out)
+    Serial.print("temperature:\t");
+    Serial.println(temperature_c);
     #endif
 
     #ifdef serial_out
