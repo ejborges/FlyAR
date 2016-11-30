@@ -6,10 +6,10 @@
 // Parts of this file include code from the AeroQuad MS5611 library cited as [AeroQuad source]
 // https://github.com/AeroQuad/AeroQuad/blob/master/Libraries/AQ_BarometricSensor/BarometricSensor_MS5611.h
 //
-// 16/11/2016 by Emilio Borges <emilio.j.borges@gmail.com>
+// 2016-11-30 by Emilio Borges <emilio.j.borges@gmail.com>
 //
 // Changelog:
-//     2016-11-16 - initial release
+//     2016-11-30 - initial release
 //
 // How to use:
 // 1. in your working scope (e.g. global scope), create an ms5611 object by calling class constructor
@@ -122,8 +122,8 @@ public:
 
     // Public I2C commands
     bool reset();
-    bool initiateD1Conversion(uint_8 osr);
-    bool initiateD2Conversion(uint_8 osr);
+    bool initiateD1Conversion(uint8_t osr);
+    bool initiateD2Conversion(uint8_t osr);
     bool readADCResult();
 
     /** Calculation functions; require PROM calibration data and current ADC conversion for D1 and/or D2.
@@ -143,7 +143,7 @@ public:
 
 private:
     uint8_t devAddr;
-    uint16_t MS5611_PROM[MS561101BA_PROM_REG_COUNT];
+    uint16_t MS5611_PROM[MS5611_PROM_REG_COUNT];
 
     // calibration data from PROM
     uint16_t C1;    // Pressure sensitivity | SENS_T1
@@ -179,8 +179,8 @@ private:
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
     bool writeByte(uint8_t devAddr, uint8_t data);
-    int_8 readByte(uint8_t devAddr, uint8_t *data);
-    int_8 readWord(uint16_t devAddr, uint16_t *data);
+    int8_t readByte(uint8_t devAddr, uint8_t *data);
+    int8_t readWord(uint8_t devAddr, uint16_t *data);
 
     #ifndef DEFINE_MIN_MAX_CONSTANTS
     const int32_t MS5611_P_MIN_MBAR = 1000;

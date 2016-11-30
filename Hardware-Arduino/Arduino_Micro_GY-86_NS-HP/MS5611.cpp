@@ -181,7 +181,7 @@ bool MS5611::writeByte(uint8_t devAddr, uint8_t data){
  * @param data Container for byte value read from device
  * @return Number of bytes read (-1 indicates failure)
  */
-int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
+int8_t MS5611::readByte(uint8_t devAddr, uint8_t *data){
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
@@ -199,9 +199,9 @@ int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
             Wire.requestFrom(devAddr, 1);
 
             if(Wire.available()) {
-                data = Wire.receive();
+                *data = Wire.receive();
                 #ifdef I2CDEV_SERIAL_DEBUG
-                    Serial.print(data, HEX);
+                    Serial.print(*data, HEX);
                 #endif
                 count++;
             }
@@ -215,9 +215,9 @@ int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
             Wire.requestFrom(devAddr, 1);
 
             if(Wire.available()) {
-                data = Wire.read();
+                *data = Wire.read();
                 #ifdef I2CDEV_SERIAL_DEBUG
-                    Serial.print(data, HEX);
+                    Serial.print(*data, HEX);
                 #endif
                 count++;
             }
@@ -231,9 +231,9 @@ int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
             Wire.requestFrom(devAddr, 1);
 
             if(Wire.available()) {
-                data = Wire.read();
+                *data = Wire.read();
                 #ifdef I2CDEV_SERIAL_DEBUG
-                    Serial.print(data, HEX);
+                    Serial.print(*data, HEX);
                 #endif
                 count++;
             }
@@ -242,7 +242,7 @@ int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
     #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
         // Fastwire library
         // no loop required for fastwire
-        uint8_t status = Fastwire::readBuf(devAddr << 1, devAddr, data, 1);
+        uint8_t status = Fastwire::readBuf(devAddr << 1, devAddr, &data, 1);
         if (status == 0) count = 1;  // success
         else             count = -1; // error
     #endif
@@ -261,7 +261,7 @@ int_8 MS5611::readByte(uint8_t devAddr, uint8_t *data){
  * @param data Container for word value read from device
  * @return Number of words read (-1 indicates failure)
  */
-int_8 MS5611::readWord(uint16_t devAddr, uint16_t *data){
+int8_t MS5611::readWord(uint8_t devAddr, uint16_t *data){
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
@@ -278,10 +278,10 @@ int_8 MS5611::readWord(uint16_t devAddr, uint16_t *data){
             Wire.beginTransmission(devAddr);
             Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
 
-            if(Wire.available()) data = Wire.receive() << 8; // first byte is bits 15-8 (MSb=15)
-            if(Wire.available()) data |= Wire.receive();    // second byte is bits  7-0 (LSb=0)
+            if(Wire.available()) *data = Wire.receive() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) *data |= Wire.receive();    // second byte is bits  7-0 (LSb=0)
             #ifdef I2CDEV_SERIAL_DEBUG
-                Serial.print(data, HEX);
+                Serial.print(*data, HEX);
             #endif
             count++;
             Wire.endTransmission();
@@ -293,10 +293,10 @@ int_8 MS5611::readWord(uint16_t devAddr, uint16_t *data){
             Wire.beginTransmission(devAddr);
             Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
 
-            if(Wire.available()) data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
-            if(Wire.available()) data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
+            if(Wire.available()) *data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) *data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
             #ifdef I2CDEV_SERIAL_DEBUG
-                Serial.print(data, HEX);
+                Serial.print(*data, HEX);
             #endif
             count++;
             Wire.endTransmission();
@@ -308,10 +308,10 @@ int_8 MS5611::readWord(uint16_t devAddr, uint16_t *data){
             Wire.beginTransmission(devAddr);
             Wire.requestFrom(devAddr, 2); // this wants bytes, 1 word = 2 bytes
 
-            if(Wire.available()) data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
-            if(Wire.available()) data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
+            if(Wire.available()) *data = Wire.read() << 8; // first byte is bits 15-8 (MSb=15)
+            if(Wire.available()) *data |= Wire.read();    // second byte is bits  7-0 (LSb=0)
             #ifdef I2CDEV_SERIAL_DEBUG
-                Serial.print(data, HEX);
+                Serial.print(*data, HEX);
             #endif
             count++;
             Wire.endTransmission();
@@ -324,7 +324,7 @@ int_8 MS5611::readWord(uint16_t devAddr, uint16_t *data){
         uint8_t status = Fastwire::readBuf(devAddr << 1, devAddr, intermediate, 2);
         if (status == 0) {
             count = 1; // success
-            data = ((uint16_t)intermediate[0] << 8) | intermediate[1];
+            *data = ((uint16_t)intermediate[0] << 8) | intermediate[1];
         }
         else count = -1; // error
     #endif
@@ -358,7 +358,7 @@ bool MS5611::reset(){
 bool MS5611::readPROM(){
     for(int i = 0; i < MS5611_PROM_REG_COUNT; ++i){
         if(MS5611::writeByte(MS5611::devAddr, MS5611_PROM_BASE_ADDR + (i << 1)))
-            if(MS5611::readWord(MS5611::devAddr, MS5611::MS5611_PROM[i]) < 1) return false;
+            if(MS5611::readWord(MS5611::devAddr, &(MS5611::MS5611_PROM[i])) < 1) return false;
         else return false;
     }
 
@@ -376,7 +376,7 @@ bool MS5611::readPROM(){
  * @param osr value desired for conversion (see OSR #defines in header file)
  * @return Status of operation (true = success)
  */
-bool MS5611::initiateD1Conversion(uint_8 osr){
+bool MS5611::initiateD1Conversion(uint8_t osr){
     if(MS5611::ADC_conversion_in_progress) return false;
 
          if(osr == MS5611_OSR_4096) MS5611::osr_adc_time_us = MS5611_OSR_4096_ADC_TIME_uS;
@@ -398,7 +398,7 @@ bool MS5611::initiateD1Conversion(uint_8 osr){
  * @param osr value desired for conversion (see OSR #defines in header file)
  * @return Status of operation (true = success)
  */
-bool MS5611::initiateD2Conversion(uint_8 osr){
+bool MS5611::initiateD2Conversion(uint8_t osr){
     if(MS5611::ADC_conversion_in_progress) return false;
 
          if(osr == MS5611_OSR_4096) MS5611::osr_adc_time_us = MS5611_OSR_4096_ADC_TIME_uS;
