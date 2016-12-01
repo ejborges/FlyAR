@@ -69,7 +69,6 @@ THE SOFTWARE.
 MS5611::MS5611() {
     MS5611::devAddr = MS5611_DEFAULT_ADDRESS;
     MS5611::MS5611_initialized = false;
-    MS5611::debug_error_code = 0;
 }
 
 /** Specific address constructor.
@@ -81,7 +80,6 @@ MS5611::MS5611() {
 MS5611::MS5611(uint8_t address) {
     MS5611::devAddr = address;
     MS5611::MS5611_initialized = false;
-    MS5611::debug_error_code = 0;
 }
 
 /** Power on and prepare for general usage.
