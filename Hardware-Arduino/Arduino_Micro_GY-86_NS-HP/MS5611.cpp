@@ -90,8 +90,8 @@ MS5611::MS5611(uint8_t address) {
  *
  * Errors:
  * 0 - No errors
- * 1 - Failed device reset (possible I2C write issue)
- * 2 - Failed PROM read (
+ * 1 - Failed device reset (failed to write I2C byte)
+ * 2 - Failed PROM read
  */
 uint8_t MS5611::initialize() {
     uint8_t error_code = 0;
@@ -140,30 +140,6 @@ uint8_t MS5611::testConnection() {
     if((testPressure < MS5611_P_MIN_MBAR) || (testPressure > MS5611_P_MAX_MBAR)) return 4;
 
     return 0;
-}
-
-/** Calculate 4-bit CRC from 128-bit PROM
- * @return 4-bit CRC inside a 16-bit container
- */
-uint16_t MS5611::MS5611_PROM_CRC4(){
-    uint16_t remainder = 0;
-    uint16_t original_crc = MS5611::MS5611_PROM[7]; // PROM[7] has to be set to 0 to properly calculate crc4,
-                                                    // save now to restore later
-
-    MS5611::MS5611_PROM[7] = (0xFF00 & (MS5611::MS5611_PROM[7]));  // set crc byte to 0
-
-    for(int i = 0; i < 16; ++i){     // operation performed on bytes, 8 words = 16 bytes
-        if(i%2) remainder ^= (MS5611::MS5611_PROM[i >> 1]) & 0x00FF;
-        else    remainder ^= MS5611::MS5611_PROM[i >> 1] >> 8;
-
-        for(int bit = 8; bit > 0; --bit){
-            if(remainder & 0x8000) remainder = (remainder << 1) ^ 0x3000;
-            else                   remainder <<= 1;
-        }
-    }
-
-    MS5611::MS5611_PROM[7] = original_crc;
-    return (remainder >> 12) & 0xF; // return calculated CRC4 value
 }
 
 /** Write single byte to MS5611
@@ -370,6 +346,30 @@ bool MS5611::reset(){
     return MS5611::writeByte(MS5611::devAddr, MS5611_RESET);
 }
 
+/** Calculate 4-bit CRC from 128-bit PROM
+ * @return 4-bit CRC inside a 16-bit container
+ */
+uint16_t MS5611::MS5611_PROM_CRC4(){
+    uint16_t remainder = 0;
+    uint16_t original_crc = MS5611::MS5611_PROM[7]; // PROM[7] has to be set to 0 to properly calculate crc4,
+    // save now to restore later
+
+    MS5611::MS5611_PROM[7] = (0xFF00 & (MS5611::MS5611_PROM[7]));  // set crc byte to 0
+
+    for(int i = 0; i < 16; ++i){     // operation performed on bytes, 8 words = 16 bytes
+        if(i%2) remainder ^= (MS5611::MS5611_PROM[i >> 1]) & 0x00FF;
+        else    remainder ^= MS5611::MS5611_PROM[i >> 1] >> 8;
+
+        for(int bit = 8; bit > 0; --bit){
+            if(remainder & 0x8000) remainder = (remainder << 1) ^ 0x3000;
+            else                   remainder <<= 1;
+        }
+    }
+
+    MS5611::MS5611_PROM[7] = original_crc;
+    return (remainder >> 12) & 0xF; // return calculated CRC4 value
+}
+
 /** The read command for PROM shall be executed once after reset by the user to read the content of the
  * calibration PROM and to calculate the calibration coefficients. There are in total 8 addresses resulting in a total
  * memory of 128 bit. Address 0 contains factory data and the setup, addresses 1-6 calibration coefficients and
@@ -378,10 +378,11 @@ bool MS5611::reset(){
  * @return Status of operation (true = success)
  */
 bool MS5611::readPROM(){
+    MS5611::prom_error = 0;
     for(int i = 0; i < MS5611_PROM_REG_COUNT; ++i){
         if(MS5611::writeByte(MS5611::devAddr, MS5611_PROM_BASE_ADDR + (i << 1)))
-            if(MS5611::readWord(MS5611::devAddr, &(MS5611::MS5611_PROM[i])) < 1) return false;
-        else return false;
+            if(MS5611::readWord(MS5611::devAddr, &(MS5611::MS5611_PROM[i])) < 1) {MS5611::prom_error = (20 + i); return false;}
+        else {MS5611::prom_error = (10 + i); return false;}
     }
 
     MS5611::C1 = MS5611::MS5611_PROM[1];
@@ -391,7 +392,19 @@ bool MS5611::readPROM(){
     MS5611::C5 = MS5611::MS5611_PROM[5];
     MS5611::C6 = MS5611::MS5611_PROM[6];
 
-    return ((MS5611::MS5611_PROM[7] & 0xF) == MS5611::MS5611_PROM_CRC4());
+    uint16_t crc = MS5611::MS5611_PROM_CRC4();
+    if(crc != (MS5611::MS5611_PROM[7] & 0xF)) {MS5611::prom_error = 3; return false;}
+    else return true;
+    //return ((MS5611::MS5611_PROM[7] & 0xF) == MS5611::MS5611_PROM_CRC4());
+}
+/** Errors:
+ * 0 - No error
+ * 1x - Failed to write I2C byte command to request PROM word x
+ * 2x - Failed to read PROM word x
+ * 3  - Calculated CRC4 does not match CRC4 read from device
+ */
+uint8_t MS5611::getPromError() {
+    return MS5611::prom_error;
 }
 
 /** Instruct MS5611 to prepare a new uncompensated digital pressure value (D1) based on current environmental reading.

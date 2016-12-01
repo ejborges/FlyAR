@@ -148,6 +148,10 @@ void setup() {
   if(baro_error_code) {
       Serial.print(F("MS5611 initialization failed with code: "));
       Serial.println(baro_error_code);
+      if(baro_error_code == 2){
+          Serial.print(F("\tPROM error: "));
+          Serial.println(baro.getPromError());
+      }
   }
 
   // verify connection

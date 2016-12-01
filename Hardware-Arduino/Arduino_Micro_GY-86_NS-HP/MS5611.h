@@ -119,6 +119,7 @@ public:
 
     uint8_t initialize();
     uint8_t testConnection();
+    uint8_t getPromError();
 
     // Public I2C commands
     bool reset();
@@ -175,6 +176,7 @@ private:
 
     // Private I2C commands
     bool readPROM();
+    uint8_t prom_error;
 
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
