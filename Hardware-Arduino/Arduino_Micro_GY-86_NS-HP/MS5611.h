@@ -117,8 +117,8 @@ public:
     MS5611();
     MS5611(uint8_t address);
 
-    void initialize();
-    bool testConnection();
+    uint8_t initialize();
+    uint8_t testConnection();
 
     // Public I2C commands
     bool reset();

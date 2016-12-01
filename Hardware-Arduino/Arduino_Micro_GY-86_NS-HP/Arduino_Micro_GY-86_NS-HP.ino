@@ -102,6 +102,7 @@ float frec1;
 float heading_uncompensated;          // Simple magnetic heading. (NOT COMPENSATED FOR PITCH AND ROLL)
 
 // MS5611 values
+uint8_t baro_error_code;
 bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
@@ -141,13 +142,25 @@ void setup() {
   Serial.println(F("Initializing I2C devices..."));
   #endif
   mpu.initialize();
-  baro.initialize();
+  baro_error_code = baro.initialize();
 
   #ifdef serial_out
+  if(baro_error_code) {
+      Serial.print(F("MS5611 initialization failed with code: "));
+      Serial.println(baro_error_code);
+  }
+
   // verify connection
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-  Serial.println(baro.testConnection() ? F("MS5611 connection successful") : F("MS5611 connection failed"));
+  //Serial.println(baro.testConnection() ? F("MS5611 connection successful") : F("MS5611 connection failed"));
+  baro_error_code = baro.testConnection();
+  if(baro_error_code) {
+      Serial.print(F("MS5611 connection failed with code: "));
+      Serial.println(baro_error_code);
+  }
+  else Serial.println(F("MS5611 connection successful"));
+
 
   // wait for ready
   Serial.println(F("\nSend any character to begin DMP programming: "));

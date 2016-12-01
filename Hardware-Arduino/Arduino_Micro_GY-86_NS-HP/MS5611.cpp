@@ -69,6 +69,7 @@ THE SOFTWARE.
 MS5611::MS5611() {
     MS5611::devAddr = MS5611_DEFAULT_ADDRESS;
     MS5611::MS5611_initialized = false;
+    MS5611::debug_error_code = 0;
 }
 
 /** Specific address constructor.
@@ -80,17 +81,30 @@ MS5611::MS5611() {
 MS5611::MS5611(uint8_t address) {
     MS5611::devAddr = address;
     MS5611::MS5611_initialized = false;
+    MS5611::debug_error_code = 0;
 }
 
 /** Power on and prepare for general usage.
  * See the datasheet for mor information.
+ * @return error code
+ *
+ * Errors:
+ * 0 - No errors
+ * 1 - Failed device reset (possible I2C write issue)
+ * 2 - Failed PROM read (
  */
-void MS5611::initialize() {
+uint8_t MS5611::initialize() {
+    uint8_t error_code = 0;
     for(int attempt = 2; attempt >= 0; --attempt){
-        if(!(MS5611::reset())) continue;
+        if(!(MS5611::reset())) {error_code = 1; continue;}
         delay(3); // wait 3ms for device to reload internal PROM registers
         if(MS5611::readPROM()) break;
-        if(!(attempt)) {MS5611::init_error = true; break;}
+        else error_code = 2;
+        if(attempt == 0) {
+            MS5611::init_error = true;
+            MS5611::MS5611_initialized = false;
+            return error_code;
+        }
         delay(3);
     }
 
@@ -101,23 +115,31 @@ void MS5611::initialize() {
     MS5611::ADC_conversion_in_progress = false;
     MS5611::init_error = false;
     MS5611::MS5611_initialized = true;
+    return 0;
 }
 
 /** Verify the I2C connection and determine if pressure reading is reasonable (within bounds of 10.00 and 1200.00 mbar)
  * Make sure the device is connected and responds as expected.
- * @return True if connection is valid, false otherwise
+ * @return error code
+ *
+ * Errors:
+ * 0 - No errors
+ * 1 - Initialization error or device was not initialized
+ * 2 - Failed to initiate D1 conversion
+ * 3 - Failed to initiate D2 conversion
+ * 4 - Calculated pressure value out of bounds
  */
-bool MS5611::testConnection() {
-    if(MS5611::init_error || !(MS5611::MS5611_initialized)) return false;
+uint8_t MS5611::testConnection() {
+    if(MS5611::init_error || !(MS5611::MS5611_initialized)) return 1;
     
-    if(!(initiateD1Conversion(MS5611_OSR_256))) return false;
+    if(!(initiateD1Conversion(MS5611_OSR_256))) return 2;
     while(!(readADCResult())){}
-    if(!(initiateD2Conversion(MS5611_OSR_256))) return false;
+    if(!(initiateD2Conversion(MS5611_OSR_256))) return 3;
     while(!(readADCResult())){}
     int32_t testPressure = getPressure_int();
-    if((testPressure < MS5611_P_MIN_MBAR) || (testPressure > MS5611_P_MAX_MBAR)) return false;
+    if((testPressure < MS5611_P_MIN_MBAR) || (testPressure > MS5611_P_MAX_MBAR)) return 4;
 
-    return true;
+    return 0;
 }
 
 /** Calculate 4-bit CRC from 128-bit PROM
