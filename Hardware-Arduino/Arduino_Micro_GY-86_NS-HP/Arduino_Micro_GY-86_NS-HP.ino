@@ -37,7 +37,6 @@
 //#include "MPU6050.h" // not necessary if using MotionApps include file
 #include "HMC5883L.h"
 #include "MS5611.h"
-#include "FlyAR.h"
 
 
 #define serial_console_out
