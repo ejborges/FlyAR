@@ -17,7 +17,7 @@ class FlyARData(object):
         '''
         if not self._haveSharedMemKeys:
             # Get the shared memory keys from the file
-            with open('/var/tmpflyar/formatted_shared_memory_keys.flyar', 'r') as f:
+            with open('/var/tmpflyar/raw_shared_memory_keys.flyar', 'r') as f:
                 for line in f:
                     self._haveSharedMemKeys = True
                     values = line.strip().split(',')
