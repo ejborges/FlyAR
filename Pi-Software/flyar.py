@@ -46,8 +46,8 @@ for shape in shapesToDraw:
 
 
 
-#Let's have a cow
-cow = pi3d.Model(file_string='cow.obj', name='cow', z=-5.0)
+#Let's have a cow and Marvin
+cow = pi3d.Model(file_string='cow.obj', name='cow', z=-5.0, sx=.2, sy=.2, sz=.2)
 
 # Fetch key presses
 mykeys = pi3d.Keyboard()
