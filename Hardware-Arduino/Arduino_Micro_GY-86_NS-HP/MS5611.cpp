@@ -378,8 +378,11 @@ uint16_t MS5611::MS5611_PROM_CRC4(){
 bool MS5611::readPROM(){
     MS5611::prom_error = 0;
     for(int i = 0; i < MS5611_PROM_REG_COUNT; ++i){
-        if(MS5611::writeByte(MS5611::devAddr, MS5611_PROM_BASE_ADDR + (i << 1)))
-            if(MS5611::readWord(MS5611::devAddr, &(MS5611::MS5611_PROM[i])) < 1) {MS5611::prom_error = (20 + i); return false;}
+        if(!(MS5611::writeByte(MS5611::devAddr, MS5611_PROM_BASE_ADDR + (i << 1))))
+            if(MS5611::readWord(MS5611::devAddr, &(MS5611::MS5611_PROM[i])) < 1) {
+                MS5611::prom_error = (20 + i);
+                return false;
+            }
         else {MS5611::prom_error = (10 + i); return false;}
     }
 
