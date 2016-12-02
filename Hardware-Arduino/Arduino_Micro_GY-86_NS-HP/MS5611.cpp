@@ -89,7 +89,7 @@ MS5611::MS5611(uint8_t address) {
  * Errors:
  * 0 - No errors
  * 1 - Failed device reset (failed to write I2C byte)
- * 2 - Failed PROM read
+ * 2 - Failed to successfully read PROM
  */
 uint8_t MS5611::initialize() {
     uint8_t error_code = 0;
@@ -130,14 +130,64 @@ uint8_t MS5611::initialize() {
 uint8_t MS5611::testConnection() {
     if(MS5611::init_error || !(MS5611::MS5611_initialized)) return 1;
     
-    if(!(initiateD1Conversion(MS5611_OSR_256))) return 2;
-    while(!(readADCResult())){}
-    if(!(initiateD2Conversion(MS5611_OSR_256))) return 3;
-    while(!(readADCResult())){}
-    int32_t testPressure = getPressure_int();
+    if(!(MS5611::initiateD1Conversion(MS5611_OSR_256))) return 2;
+    while(!(MS5611::readADCResult())){}
+    if(!(MS5611::initiateD2Conversion(MS5611_OSR_256))) return 3;
+    while(!(MS5611::readADCResult())){}
+    int32_t testPressure = MS5611::getPressure_int();
+    MS5611::privateTestPressure = testPressure;
     if((testPressure < MS5611_P_MIN_MBAR) || (testPressure > MS5611_P_MAX_MBAR)) return 4;
 
     return 0;
+}
+
+int32_t MS5611::getTestPressure(){
+    return MS5611::privateTestPressure;
+}
+
+/**@param variable
+ * @return value of variable
+ *
+ * Variables:
+ * 0  - devAddr
+ * 1  - MS5611_PROM[0]
+ * 2  - MS5611_PROM[1]
+ * 3  - MS5611_PROM[2]
+ * 4  - MS5611_PROM[3]
+ * 5  - MS5611_PROM[4]
+ * 6  - MS5611_PROM[5]
+ * 7  - MS5611_PROM[6]
+ * 8  - MS5611_PROM[7]
+ * 9  - C1
+ * 10 - C2
+ * 11 - C3
+ * 12 - C4
+ * 13 - C5
+ * 14 - C6
+ * 15 - D1
+ * 16 - D2
+ */
+uint32_t MS5611::getPrivateVariable(uint8_t variable){
+    switch(variable){
+        case 0 : return MS5611::devAddr;
+        case 1 : return MS5611::MS5611_PROM[0];
+        case 2 : return MS5611::MS5611_PROM[1];
+        case 3 : return MS5611::MS5611_PROM[2];
+        case 4 : return MS5611::MS5611_PROM[3];
+        case 5 : return MS5611::MS5611_PROM[4];
+        case 6 : return MS5611::MS5611_PROM[5];
+        case 7 : return MS5611::MS5611_PROM[6];
+        case 8 : return MS5611::MS5611_PROM[7];
+        case 9 : return MS5611::C1;
+        case 10 : return MS5611::C2;
+        case 11 : return MS5611::C3;
+        case 12 : return MS5611::C4;
+        case 13 : return MS5611::C5;
+        case 14 : return MS5611::C6;
+        case 15 : return MS5611::D1;
+        case 16 : return MS5611::D2;
+        default : return 0;
+    }
 }
 
 /** Write single byte to MS5611

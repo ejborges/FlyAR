@@ -23,11 +23,6 @@
  *    SkyTraQ NS-HP RTK capable GPS/GNSS receiver
  *    NS-HP is a high performance RTK capable GPS / GNSS receiver achieving centimeter-level accuracy relative positioning.
  *    http://navspark.mybigcommerce.com/ns-hp-rtk-capable-gps-gnss-receiver/
- * 
- * Sources:
- *  [1] https://github.com/farrellf/Balancing_Robot_Firmware/blob/6a7c770a52409c4dbbca72b125163df74aa2956c/main.c
- *  [2] https://youtu.be/hvjNaIlHPV0
- *  [3] http://playground.arduino.cc/Main/MPU-6050
  */
 
 
@@ -144,24 +139,64 @@ void setup() {
 
   #ifdef serial_console_out
   if(baro_error_code) {
-      Serial.print(F("MS5611 initialization failed with code: "));
+      Serial.print(F("-MS5611 initialization failed with code: "));
       Serial.println(baro_error_code);
       if(baro_error_code == 2){
-          Serial.print(F("\tPROM error: "));
+          Serial.print(F("--PROM error: "));
           Serial.println(baro.getPromError());
       }
   }
 
   // verify connection
   Serial.println(F("Testing device connections..."));
-  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  Serial.println(mpu.testConnection() ? F("-MPU6050 connection successful") : F("-MPU6050 connection failed"));
   //Serial.println(baro.testConnection() ? F("MS5611 connection successful") : F("MS5611 connection failed"));
   baro_error_code = baro.testConnection();
   if(baro_error_code) {
-      Serial.print(F("MS5611 connection failed with code: "));
+      Serial.print(F("-MS5611 connection failed with code: "));
       Serial.println(baro_error_code);
+      if(baro_error_code == 4){
+        Serial.print(F("--testPressure out of bounds; should be between [1000, 120000]; = "));
+        Serial.println(baro.getTestPressure());
+
+        Serial.print(F("--MS5611 private variables:"));
+        Serial.print(F("---devAddr = "));
+        Serial.println(baro.getPrivateVariable(0));
+        Serial.print(F("---MS5611_PROM[0] = "));
+        Serial.println(baro.getPrivateVariable(1));
+        Serial.print(F("---MS5611_PROM[1] = "));
+        Serial.println(baro.getPrivateVariable(2));
+        Serial.print(F("---MS5611_PROM[2] = "));
+        Serial.println(baro.getPrivateVariable(3));
+        Serial.print(F("---MS5611_PROM[3] = "));
+        Serial.println(baro.getPrivateVariable(4));
+        Serial.print(F("---MS5611_PROM[4] = "));
+        Serial.println(baro.getPrivateVariable(5));
+        Serial.print(F("---MS5611_PROM[5] = "));
+        Serial.println(baro.getPrivateVariable(6));
+        Serial.print(F("---MS5611_PROM[6] = "));
+        Serial.println(baro.getPrivateVariable(7));
+        Serial.print(F("---MS5611_PROM[7] = "));
+        Serial.println(baro.getPrivateVariable(8));
+        Serial.print(F("---C1 = "));
+        Serial.println(baro.getPrivateVariable(9));
+        Serial.print(F("---C2 = "));
+        Serial.println(baro.getPrivateVariable(10));
+        Serial.print(F("---C3 = "));
+        Serial.println(baro.getPrivateVariable(11));
+        Serial.print(F("---C4 = "));
+        Serial.println(baro.getPrivateVariable(12));
+        Serial.print(F("---C5 = "));
+        Serial.println(baro.getPrivateVariable(13));
+        Serial.print(F("---C6 = "));
+        Serial.println(baro.getPrivateVariable(14));
+        Serial.print(F("---D1 = "));
+        Serial.println(baro.getPrivateVariable(15));
+        Serial.print(F("---D2 = "));
+        Serial.println(baro.getPrivateVariable(16));
+      }
   }
-  else Serial.println(F("MS5611 connection successful"));
+  else Serial.println(F("-MS5611 connection successful"));
 
 
   // wait for ready

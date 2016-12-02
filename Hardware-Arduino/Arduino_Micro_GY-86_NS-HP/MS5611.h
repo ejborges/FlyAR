@@ -119,7 +119,11 @@ public:
 
     uint8_t initialize();
     uint8_t testConnection();
+
+    // debug functions
     uint8_t getPromError();
+    int32_t getTestPressure();
+    uint32_t getPrivateVariable(uint8_t variable);
 
     // Public I2C commands
     bool reset();
@@ -176,7 +180,6 @@ private:
 
     // Private I2C commands
     bool readPROM();
-    uint8_t prom_error;
 
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
@@ -197,6 +200,10 @@ private:
     const int64_t MS5611_SENS_MIN   = -4294836225;
     const int64_t MS5611_SENS_MAX   = 6442352640;
     #endif
+
+    // debug functions/variables
+    uint8_t prom_error;
+    int32_t privateTestPressure = 0;
 };
 
 #endif //_MS5611_H_
