@@ -34,7 +34,7 @@
 #include "MS5611.h"
 
 
-#define serial_console_out
+//#define serial_console_out
 
 #define MPU6050_INTERRUPT_PIN 0
 #define MS5611_INTERRUPT_PIN 1
@@ -101,6 +101,18 @@ bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
 
+
+// runtime variables
+unsigned long loop_start_time_micros;
+float last_yaw = 0;
+float second_last_yaw = 0;
+float third_last_yaw = 0;
+bool got_first_three_yaws = false;
+float curr_min_last;
+float last_min_sLast;
+float sLast_min_tLast;
+float temp;
+
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
 // ================================================================
@@ -147,6 +159,44 @@ void setup() {
       }
   }
 
+    Serial.println(F(""));
+    Serial.println(F("--MS5611 private variables:"));
+    Serial.print(F("---devAddr = "));
+    Serial.println(baro.getPrivateVariable(0));
+    Serial.print(F("---MS5611_PROM[0] = "));
+    Serial.println(baro.getPrivateVariable(1));
+    Serial.print(F("---MS5611_PROM[1] = "));
+    Serial.println(baro.getPrivateVariable(2));
+    Serial.print(F("---MS5611_PROM[2] = "));
+    Serial.println(baro.getPrivateVariable(3));
+    Serial.print(F("---MS5611_PROM[3] = "));
+    Serial.println(baro.getPrivateVariable(4));
+    Serial.print(F("---MS5611_PROM[4] = "));
+    Serial.println(baro.getPrivateVariable(5));
+    Serial.print(F("---MS5611_PROM[5] = "));
+    Serial.println(baro.getPrivateVariable(6));
+    Serial.print(F("---MS5611_PROM[6] = "));
+    Serial.println(baro.getPrivateVariable(7));
+    Serial.print(F("---MS5611_PROM[7] = "));
+    Serial.println(baro.getPrivateVariable(8));
+    Serial.print(F("---C1 = "));
+    Serial.println(baro.getPrivateVariable(9));
+    Serial.print(F("---C2 = "));
+    Serial.println(baro.getPrivateVariable(10));
+    Serial.print(F("---C3 = "));
+    Serial.println(baro.getPrivateVariable(11));
+    Serial.print(F("---C4 = "));
+    Serial.println(baro.getPrivateVariable(12));
+    Serial.print(F("---C5 = "));
+    Serial.println(baro.getPrivateVariable(13));
+    Serial.print(F("---C6 = "));
+    Serial.println(baro.getPrivateVariable(14));
+    Serial.print(F("---D1 = "));
+    Serial.println(baro.getPrivateVariable(15));
+    Serial.print(F("---D2 = "));
+    Serial.println(baro.getPrivateVariable(16));
+    Serial.println(F(""));
+
   // verify connection
   Serial.println(F("Testing device connections..."));
   Serial.println(mpu.testConnection() ? F("-MPU6050 connection successful") : F("-MPU6050 connection failed"));
@@ -159,7 +209,7 @@ void setup() {
         Serial.print(F("--testPressure out of bounds; should be between [1000, 120000]; = "));
         Serial.println(baro.getTestPressure());
 
-        Serial.print(F("--MS5611 private variables:"));
+        Serial.println(F("--MS5611 private variables:"));
         Serial.print(F("---devAddr = "));
         Serial.println(baro.getPrivateVariable(0));
         Serial.print(F("---MS5611_PROM[0] = "));
@@ -317,11 +367,14 @@ void setup() {
 
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
+
+  loop_start_time_micros = micros();
 }
 
 void loop() {
   // if programming failed, don't try to do anything
-  if (!dmpReady) return;
+  //if (!dmpReady) return;
+  if (!dmpReady) {delay(15000); Serial.println(F("dmp not ready! Exiting loop();")); return;}
 
   // wait for MPU interrupt or extra packet(s) available
   while (!mpuInterrupt && fifoCount < packetSize) {
@@ -332,16 +385,10 @@ void loop() {
     // while() loop to immediately process the MPU data
     // .
 
-    #ifndef serial_console_out
-    if(Serial.read() > 0){
-      Serial.print(ypr[0] * 180/M_PI);
-      Serial.print(",");
-      Serial.print(ypr[1] * 180/M_PI);
-      Serial.print(",");
-      Serial.println(ypr[2] * 180/M_PI);
-    }
-    #endif // #ifndef serial_console_out
+  }
 
+  
+    
 
     if(received_D1_conversion && baro.readADCResult()){
         received_D1_conversion = false;
@@ -355,7 +402,6 @@ void loop() {
             baro.initiateD2Conversion(MS5611_OSR_4096);
         }
     }
-  }
 
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
@@ -504,6 +550,41 @@ void loop() {
 
 
 
+
+// if raspberry pi requests current values
+    #ifndef serial_console_out
+    //Serial.println(F("Attempting to read Pi"));
+    if(Serial.read() > 0){
+      Serial.print(ypr[0] * 180/M_PI);
+      Serial.print(",");
+      Serial.print(ypr[1] * 180/M_PI);
+      Serial.print(",");
+      Serial.println(ypr[2] * 180/M_PI);
+    }
+    #endif // #ifndef serial_console_out
+
+
+
+    
+
+    // check for yaw drift (5 second timeout)
+    if(micros() < (loop_start_time_micros + 5000000)){
+      if(!(got_first_three_yaws){
+        if(last_yaw == 0) last_yaw = ypr[0];
+        else if(second_last_yaw == 0) {second_last_yaw = last_yaw; last_yaw = ypr[0];}
+        else if(third_last_yaw == 0) {third_last_yaw = second_last_yaw; second_last_yaw = last_yaw; last_yaw = ypr[0]; got_first_three_yaws = true;}
+      }
+
+      temp = ypr[0] - last_yaw;
+      curr_min_last = abs(temp);
+      temp = last_yaw - second_last_yaw;
+      last_min_sLast = abs(temp);
+      temp = second_last_yaw - third_last_yaw;
+      sLast_min_tLast = abs(temp);
+
+      
+      
+    }
 
 
 
