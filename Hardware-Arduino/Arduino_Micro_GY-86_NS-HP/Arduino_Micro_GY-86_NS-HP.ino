@@ -34,7 +34,7 @@
 #include "MS5611.h"
 
 
-//#define serial_console_out
+#define serial_console_out
 
 #define MPU6050_INTERRUPT_PIN 0
 #define MS5611_INTERRUPT_PIN 1
@@ -101,17 +101,14 @@ bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
 
-
-// runtime variables
-unsigned long loop_start_time_micros;
-float last_yaw = 0;
-float second_last_yaw = 0;
-float third_last_yaw = 0;
-bool got_first_three_yaws = false;
-float curr_min_last;
-float last_min_sLast;
-float sLast_min_tLast;
-float temp;
+//TODO
+// yaw drift correction
+//#define YAW_DRIFT_TIMEOUT_LENGTH_uS 5000000
+//unsigned long yaw_drift_timeout;
+//float yaw_history[3];
+//float yaw_history_delta[3];
+//float yaw_drift_average = 0.0;
+//bool attempting_to_detect_yaw_drift = true;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
@@ -368,7 +365,9 @@ void setup() {
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
 
-  loop_start_time_micros = micros();
+  //TODO
+//  yaw_history[0] = yaw_history[1] = yaw_history[2] = 0;
+//  yaw_drift_timeout = micros() + YAW_DRIFT_TIMEOUT_LENGTH_uS;
 }
 
 void loop() {
@@ -377,31 +376,30 @@ void loop() {
   if (!dmpReady) {delay(15000); Serial.println(F("dmp not ready! Exiting loop();")); return;}
 
   // wait for MPU interrupt or extra packet(s) available
-  while (!mpuInterrupt && fifoCount < packetSize) {
-    // other program behavior stuff here
-    // .
-    // if you are really paranoid you can frequently test in between other
-    // stuff to see if mpuInterrupt is true, and if so, "break;" from the
-    // while() loop to immediately process the MPU data
-    // .
-
-  }
+//  while (!mpuInterrupt && fifoCount < packetSize) {
+//    // other program behavior stuff here
+//    // .
+//    // if you are really paranoid you can frequently test in between other
+//    // stuff to see if mpuInterrupt is true, and if so, "break;" from the
+//    // while() loop to immediately process the MPU data
+//    // .
+//  }
 
   
     
-
-    if(received_D1_conversion && baro.readADCResult()){
-        received_D1_conversion = false;
-        pressure_mbar = baro.getPressure_float();
-        temperature_c = baro.getTemperature_float();
-    }
-    else{
-        baro.initiateD1Conversion(MS5611_OSR_4096);
-        if(baro.readADCResult()){
-            received_D1_conversion = true;
-            baro.initiateD2Conversion(MS5611_OSR_4096);
-        }
-    }
+  // request and calculate barometer pressure and temperature
+  if(received_D1_conversion && baro.readADCResult()){
+      received_D1_conversion = false;
+      pressure_mbar = baro.getPressure_float();
+      temperature_c = baro.getTemperature_float();
+  }
+  else{
+      baro.initiateD1Conversion(MS5611_OSR_4096);
+      if(baro.readADCResult()){
+          received_D1_conversion = true;
+          baro.initiateD2Conversion(MS5611_OSR_4096);
+      }
+  }
 
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
@@ -455,20 +453,20 @@ void loop() {
     #endif //serial_console_out
 
 
-    #ifdef OUTPUT_READABLE_YAWPITCHROLL
+    //#ifdef OUTPUT_READABLE_YAWPITCHROLL
     // display yaw,pitch,roll angles in degrees
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
     #ifdef serial_console_out
     Serial.print("ypr\t");
-    Serial.print(ypr[0] * 180/M_PI);
+    Serial.print((ypr[0] * 180/M_PI) + yaw_drift_average);
     Serial.print("\t");
     Serial.print(ypr[1] * 180/M_PI);
     Serial.print("\t");
     Serial.println(ypr[2] * 180/M_PI);
     #endif //serial_console_out
-    #endif //OUTPUT_READABLE_YAWPITCHROLL
+    //#endif //OUTPUT_READABLE_YAWPITCHROLL
 
     #ifdef OUTPUT_READABLE_WORLDACCEL
     // display initial world-frame acceleration, adjusted to remove gravity
@@ -551,40 +549,37 @@ void loop() {
 
 
 
-// if raspberry pi requests current values
-    #ifndef serial_console_out
-    //Serial.println(F("Attempting to read Pi"));
+  // if raspberry pi requests current values
+  #ifndef serial_console_out
+
     if(Serial.read() > 0){
-      Serial.print(ypr[0] * 180/M_PI);
+      Serial.print((ypr[0] * 180/M_PI) + yaw_drift_average);
       Serial.print(",");
       Serial.print(ypr[1] * 180/M_PI);
       Serial.print(",");
       Serial.println(ypr[2] * 180/M_PI);
     }
-    #endif // #ifndef serial_console_out
+  #endif // #ifndef serial_console_out
 
 
 
-    
 
-    // check for yaw drift (5 second timeout)
-    if(micros() < (loop_start_time_micros + 5000000)){
-      if(!(got_first_three_yaws){
-        if(last_yaw == 0) last_yaw = ypr[0];
-        else if(second_last_yaw == 0) {second_last_yaw = last_yaw; last_yaw = ypr[0];}
-        else if(third_last_yaw == 0) {third_last_yaw = second_last_yaw; second_last_yaw = last_yaw; last_yaw = ypr[0]; got_first_three_yaws = true;}
-      }
-
-      temp = ypr[0] - last_yaw;
-      curr_min_last = abs(temp);
-      temp = last_yaw - second_last_yaw;
-      last_min_sLast = abs(temp);
-      temp = second_last_yaw - third_last_yaw;
-      sLast_min_tLast = abs(temp);
-
-      
-      
-    }
+//TODO
+  // check for yaw drift at startup
+//  if(attempting_to_detect_yaw_drift){
+//
+//
+//
+//    yaw_history_delta[0] =
+//
+//
+//    // update yaw history
+//    yaw_history[2] = yaw_history[1];
+//    yaw_history[1] = yaw_history[0];
+//    yaw_history[0] = (ypr[0] * 180/M_PI);
+//
+//    if(micros() > yaw_drift_timeout) attempting_to_detect_yaw_drift = false;
+//  }
 
 
 
