@@ -101,7 +101,7 @@ bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
 
-//TODO
+//TODO Delete commented code below
 // yaw drift correction
 //#define YAW_DRIFT_TIMEOUT_LENGTH_uS 5000000
 //unsigned long yaw_drift_timeout;
@@ -261,10 +261,13 @@ void setup() {
   // supply your own gyro offsets here, scaled for min sensitivity
   // If you don't know yours, you can find an automated sketch for this task from:
   //   http://www.i2cdevlib.com/forums/topic/96-arduino-sketch-to-automatically-calculate-mpu6050-offsets/
-  mpu.setXGyroOffset(220);
-  mpu.setYGyroOffset(76);
-  mpu.setZGyroOffset(-85);
-  mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+  mpu.setXAccelOffset(46);
+  mpu.setYAccelOffset(709);
+  mpu.setZAccelOffset(1515);
+  mpu.setXGyroOffset(64);
+  mpu.setYGyroOffset(-65);
+  mpu.setZGyroOffset(28);
+
 
   // --------------------------------------------------------------------------------------------------
   // Have to init mag here because dmpInit sets its own slave 0 params, we overwrite those params here
@@ -365,7 +368,7 @@ void setup() {
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
 
-  //TODO
+  //TODO Delete commented code below
 //  yaw_history[0] = yaw_history[1] = yaw_history[2] = 0;
 //  yaw_drift_timeout = micros() + YAW_DRIFT_TIMEOUT_LENGTH_uS;
 }
@@ -564,7 +567,7 @@ void loop() {
 
 
 
-//TODO
+//TODO Delete commented code below
   // check for yaw drift at startup
 //  if(attempting_to_detect_yaw_drift){
 //
