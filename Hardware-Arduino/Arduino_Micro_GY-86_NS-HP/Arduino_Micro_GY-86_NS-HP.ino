@@ -57,6 +57,13 @@ MS5611 baro;
 // more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
 #define OUTPUT_READABLE_YAWPITCHROLL
 
+// uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
+// components with gravity removed. This acceleration reference frame is
+// not compensated for orientation, so +X is always +X according to the
+// sensor, just without the effects of gravity. If you want acceleration
+// compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
+#define OUTPUT_READABLE_REALACCEL
+
 // uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
@@ -100,15 +107,6 @@ uint8_t baro_error_code;
 bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
-
-//TODO Delete commented code below
-// yaw drift correction
-//#define YAW_DRIFT_TIMEOUT_LENGTH_uS 5000000
-//unsigned long yaw_drift_timeout;
-//float yaw_history[3];
-//float yaw_history_delta[3];
-//float yaw_drift_average = 0.0;
-//bool attempting_to_detect_yaw_drift = true;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
@@ -324,14 +322,14 @@ void setup() {
   if (devStatus == 0) {
     // turn on the DMP, now that it's ready
     #ifdef serial_console_out
-    Serial.println(F("Enabling DMP..."));
+      Serial.println(F("Enabling DMP..."));
     #endif // serial_console_out
 
     mpu.setDMPEnabled(true);
 
     // enable Arduino interrupt detection
     #ifdef serial_console_out
-    Serial.println(F("Enabling MPU6050 interrupt detection..."));
+      Serial.println(F("Enabling MPU6050 interrupt detection..."));
     #endif // serial_console_out
 
     //enable interrupt INT2 (physical pin 20, PD2) connected to the INTA pin from the MPU6050 on the GY-86
@@ -346,7 +344,7 @@ void setup() {
 
     // set our DMP Ready flag so the main loop() function knows it's okay to use it
     #ifdef serial_console_out
-    Serial.println(F("DMP ready! Waiting for first interrupt..."));
+      Serial.println(F("DMP ready! Waiting for first interrupt..."));
     #endif // serial_console_out
     dmpReady = true;
 
@@ -359,18 +357,14 @@ void setup() {
     // 2 = DMP configuration updates failed
     // (if it's going to break, usually the code will be 1)
     #ifdef serial_console_out
-    Serial.print(F("DMP Initialization failed (code "));
-    Serial.print(devStatus);
-    Serial.println(F(")"));
+      Serial.print(F("DMP Initialization failed (code "));
+      Serial.print(devStatus);
+      Serial.println(F(")"));
     #endif // serial_console_out
   }
 
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
-
-  //TODO Delete commented code below
-//  yaw_history[0] = yaw_history[1] = yaw_history[2] = 0;
-//  yaw_drift_timeout = micros() + YAW_DRIFT_TIMEOUT_LENGTH_uS;
 }
 
 void loop() {
@@ -416,7 +410,7 @@ void loop() {
     // reset so we can continue cleanly
     mpu.resetFIFO();
     #ifdef serial_console_out
-    Serial.println(F("FIFO overflow!"));
+      Serial.println(F("FIFO overflow!"));
     #endif // serial_console_out
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
@@ -444,15 +438,15 @@ void loop() {
     // to exit screen, do CTRL-A CTRL-\
 
     #ifdef serial_console_out
-    //Serial.print(F("someting"));
+      //Serial.print(F("someting"));
 
-    //http://stackoverflow.com/a/15559322
-    Serial.write(27);          // ESC command
-    Serial.print(F("[2J"));    // clear screen command
-    Serial.write(27);
-    Serial.print(F("[H"));     // cursor to home command
+      //http://stackoverflow.com/a/15559322
+      Serial.write(27);          // ESC command
+      Serial.print(F("[2J"));    // clear screen command
+      Serial.write(27);
+      Serial.print(F("[H"));     // cursor to home command
 
-    Serial.println("______\tx|y\ty|p\tz|r");
+      Serial.println("______\tx|y\ty|p\tz|r");
     #endif //serial_console_out
 
 
@@ -462,31 +456,47 @@ void loop() {
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
     #ifdef serial_console_out
-    Serial.print("ypr\t");
-    Serial.print((ypr[0] * 180/M_PI) + yaw_drift_average);
-    Serial.print("\t");
-    Serial.print(ypr[1] * 180/M_PI);
-    Serial.print("\t");
-    Serial.println(ypr[2] * 180/M_PI);
+      Serial.print("ypr\t");
+      Serial.print(ypr[0] * 180/M_PI);
+      Serial.print("\t");
+      Serial.print(ypr[1] * 180/M_PI);
+      Serial.print("\t");
+      Serial.println(ypr[2] * 180/M_PI);
     #endif //serial_console_out
     //#endif //OUTPUT_READABLE_YAWPITCHROLL
 
+    #ifdef OUTPUT_READABLE_REALACCEL
+      // display real acceleration, adjusted to remove gravity
+      mpu.dmpGetQuaternion(&q, fifoBuffer);
+      mpu.dmpGetAccel(&aa, fifoBuffer);
+      mpu.dmpGetGravity(&gravity, &q);
+      mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+      #ifdef serial_console_out
+        Serial.print("areal\t");
+        Serial.print(aaReal.x);
+        Serial.print("\t");
+        Serial.print(aaReal.y);
+        Serial.print("\t");
+        Serial.println(aaReal.z);
+      #endif //serial_console_out
+    #endif
+
     #ifdef OUTPUT_READABLE_WORLDACCEL
-    // display initial world-frame acceleration, adjusted to remove gravity
-    // and rotated based on known orientation from quaternion
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetAccel(&aa, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-    #ifdef serial_console_out
-    Serial.print("acc:\t");
-    Serial.print(aaWorld.x);
-    Serial.print("\t");
-    Serial.print(aaWorld.y);
-    Serial.print("\t");
-    Serial.println(aaWorld.z);
-    #endif //serial_console_out
+      // display initial world-frame acceleration, adjusted to remove gravity
+      // and rotated based on known orientation from quaternion
+      mpu.dmpGetQuaternion(&q, fifoBuffer);
+      mpu.dmpGetAccel(&aa, fifoBuffer);
+      mpu.dmpGetGravity(&gravity, &q);
+      mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+      mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+      #ifdef serial_console_out
+        Serial.print("acc:\t");
+        Serial.print(aaWorld.x);
+        Serial.print("\t");
+        Serial.print(aaWorld.y);
+        Serial.print("\t");
+        Serial.println(aaWorld.z);
+      #endif //serial_console_out
     #endif //OUTPUT_READABLE_WORLDACCEL
 
     // Get and process information from DMP
@@ -499,57 +509,55 @@ void loop() {
 //    //    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);  //NOT RECOMMENDED. Gives you linear acceleration rotated to initial position.
 
     #ifdef OUTPUT_READABLE_MAGNETOMETER
-    //Read magnetometer measures
-    mx=mpu.getExternalSensorWord(0);
-    my=mpu.getExternalSensorWord(2);
-    mz=mpu.getExternalSensorWord(4);
-    #ifdef serial_console_out
-    Serial.print("mag:\t");
-    Serial.print(mx);
-    Serial.print("\t");
-    Serial.print(my);
-    Serial.print("\t");
-    Serial.println(mz);
-    #endif //serial_console_out
+      //Read magnetometer measures
+      mx=mpu.getExternalSensorWord(0);
+      my=mpu.getExternalSensorWord(2);
+      mz=mpu.getExternalSensorWord(4);
+      #ifdef serial_console_out
+        Serial.print("mag:\t");
+        Serial.print(mx);
+        Serial.print("\t");
+        Serial.print(my);
+        Serial.print("\t");
+        Serial.println(mz);
+      #endif //serial_console_out
     #endif //OUTPUT_READABLE_MAGNETOMETER
 
     #ifdef OUTPUT_READABLE_HEADING
-    //Read magnetometer measures
-    mx=mpu.getExternalSensorWord(0);
-    my=mpu.getExternalSensorWord(2);
-    mz=mpu.getExternalSensorWord(4);
+      //Read magnetometer measures
+      mx=mpu.getExternalSensorWord(0);
+      my=mpu.getExternalSensorWord(2);
+      mz=mpu.getExternalSensorWord(4);
 
-    // calculate heading in degrees. 0 degree indicates North
-    heading_uncompensated = atan2(my, mx);
-    if(heading_uncompensated < 0) heading_uncompensated += 2 * M_PI;
+      // calculate heading in degrees. 0 degree indicates North
+      heading_uncompensated = atan2(my, mx);
+      if(heading_uncompensated < 0) heading_uncompensated += 2 * M_PI;
 
-    #ifdef serial_console_out
-    Serial.print("heading:\t");
-    Serial.println(heading_uncompensated * 180/M_PI);
-    #endif //serial_console_out
+      #ifdef serial_console_out
+        Serial.print("heading:\t");
+        Serial.println(heading_uncompensated * 180/M_PI);
+      #endif //serial_console_out
     #endif //OUTPUT_READABLE_HEADING
 
     #if defined(OUTPUT_READABLE_PRESSURE) && defined(serial_console_out)
-    Serial.print("pressure:\t");
-    Serial.println(pressure_mbar);
+      Serial.print("pressure:\t");
+      Serial.println(pressure_mbar);
     #endif //defined(OUTPUT_READABLE_PRESSURE) && defined(serial_console_out)
 
     #if defined(OUTPUT_READABLE_TEMPERATURE) && defined(serial_console_out)
-    Serial.print("temperature:\t");
-    Serial.println(temperature_c);
+      Serial.print("temperature:\t");
+      Serial.println(temperature_c);
     #endif //defined(OUTPUT_READABLE_TEMPERATURE) && defined(serial_console_out)
 
     #ifdef serial_console_out
-    Serial.print("DMP Freq:\t");
-    Serial.println(frec1);
+      Serial.print("DMP Freq:\t");
+      Serial.println(frec1);
     #endif //serial_console_out
 
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
   }
-
-
 
 
   // if raspberry pi requests current values
@@ -563,30 +571,6 @@ void loop() {
       Serial.println(ypr[2] * 180/M_PI);
     }
   #endif // #ifndef serial_console_out
-
-
-
-
-//TODO Delete commented code below
-  // check for yaw drift at startup
-//  if(attempting_to_detect_yaw_drift){
-//
-//
-//
-//    yaw_history_delta[0] =
-//
-//
-//    // update yaw history
-//    yaw_history[2] = yaw_history[1];
-//    yaw_history[1] = yaw_history[0];
-//    yaw_history[0] = (ypr[0] * 180/M_PI);
-//
-//    if(micros() > yaw_drift_timeout) attempting_to_detect_yaw_drift = false;
-//  }
-
-
-
-  
 
 
 }
