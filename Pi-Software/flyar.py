@@ -28,11 +28,11 @@ if USE_CAMERA:
 pi3dShapes = []
 objectNumbers = []
 objectNumber = 1
-arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (221,0,170,255))
+arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (100,100,100,255))
 shader = pi3d.Shader('uv_flat')
 for shape in shapesToDraw:
     ringRots = 12 if shape.shapeType == 1 else 4
-    newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.1)
+    newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.05)
     newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
     logMessage = str(time()) + ":[FLY-AR] Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
     logging.info(logMessage)
@@ -46,8 +46,12 @@ for shape in shapesToDraw:
 
 
 
-#Let's have a cow and Marvin
-cow = pi3d.Model(file_string='cow.obj', name='cow', z=-5.0, sx=.2, sy=.2, sz=.2)
+#Let's have a cow
+cow = pi3d.Model(file_string='objs/AVMT300/AVMT300.obj', name='cow', z=5, sx=.2, sy=.2, sz=.2)
+
+# Add a sprite
+utLogo = pi3d.ImageSprite(texture='sprites/toledo_shield.gif', z=5.0, sx=1, sy=1, sz=1, shader=shader)
+utRocket = pi3d.ImageSprite(texture='sprites/ToledoRockets.png', z=5.0, x=-1.0, shader=shader)
 
 # Fetch key presses
 mykeys = pi3d.Keyboard()
@@ -75,6 +79,8 @@ while DISPLAY.loop_running():
         text.draw()
 
     cow.draw()
+    #utLogo.draw()
+    #utRocket.draw()
 
     # If this is the first time, get the original values
     if first:

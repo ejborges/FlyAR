@@ -5,5 +5,5 @@ from PIL import Image
 camera = PiCamera()
 camera.start_preview()
 camera.annotate_text = 'Hello World!'
-sleep(20)
+sleep(5)
 camera.stop_preview()

@@ -16,7 +16,7 @@ def read_config():
             blue = int(pieces[3])
             color = [red, green, blue]
             x = float(pieces[4])
-            y = float(pieces[6])
+            y = float(pieces[6]) * .1
             z = float(pieces[5])
             position = [x, y, z]
             radius = float(pieces[7])

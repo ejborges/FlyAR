@@ -1,0 +1,85 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# Fichier créé: 22.09.2013 22:11:50
+
+newmtl 03___Default
+	Ns 59.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.9270 0.9270 0.9270
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\Mon Ordinateur\Documents\texture.jpg
+	map_Kd C:\Users\Mon Ordinateur\Documents\texture.jpg
+	map_refl Map__4_Réflexion_réfraction.tga
+
+newmtl 08___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\Mon Ordinateur\Documents\texture 3.jpg
+	map_Kd C:\Users\Mon Ordinateur\Documents\texture 3.jpg
+
+newmtl 01___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.1137 0.1137 0.1137
+	map_Ka C:\Users\Mon Ordinateur\Documents\VideoCopilot\Riot Gear\Grungy Textures\Grayscale\Grunge_gray_06.jpg
+	map_Kd C:\Users\Mon Ordinateur\Documents\VideoCopilot\Riot Gear\Grungy Textures\Grayscale\Grunge_gray_06.jpg
+
+newmtl caca
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.1137 0.1137 0.1137
+	map_Ka C:\Users\Mon Ordinateur\Documents\VideoCopilot\Riot Gear\Grungy Textures\Grayscale\Grunge_gray_06.jpg
+	map_Kd C:\Users\Mon Ordinateur\Documents\VideoCopilot\Riot Gear\Grungy Textures\Grayscale\Grunge_gray_06.jpg
+
+newmtl 07___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5880 0.5880 0.5880
+	Kd 0.5880 0.5880 0.5880
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka C:\Users\Mon Ordinateur\Documents\texture 2.jpg
+	map_Kd C:\Users\Mon Ordinateur\Documents\texture 2.jpg
+
+newmtl 09___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0000 0.0000 0.0000
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
