@@ -83,26 +83,6 @@ DESTDIR_TARGET = debug\FlyAR-Application.exe
 	$<
 <<
 
-{debug}.cpp{debug\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
-	$<
-<<
-
-{debug}.cc{debug\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
-	$<
-<<
-
-{debug}.cxx{debug\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
-	$<
-<<
-
-{debug}.c{debug\}.obj::
-	$(CC) -c $(CFLAGS) $(INCPATH) -Fodebug\ @<<
-	$<
-<<
-
 {.}.cpp{debug\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
@@ -119,6 +99,26 @@ DESTDIR_TARGET = debug\FlyAR-Application.exe
 <<
 
 {.}.c{debug\}.obj::
+	$(CC) -c $(CFLAGS) $(INCPATH) -Fodebug\ @<<
+	$<
+<<
+
+{debug}.cpp{debug\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
+	$<
+<<
+
+{debug}.cc{debug\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
+	$<
+<<
+
+{debug}.cxx{debug\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Fodebug\ @<<
+	$<
+<<
+
+{debug}.c{debug\}.obj::
 	$(CC) -c $(CFLAGS) $(INCPATH) -Fodebug\ @<<
 	$<
 <<
@@ -620,6 +620,7 @@ debug\moc_mainwindow.cpp: ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\incl
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\FlyAR-Application\mainwindow.h
 	C:\Qt\Qt5.2.0\5.2.0\msvc2010\bin\moc.exe $(DEFINES) -D_MSC_VER=1600 -D_WIN32 $(INCPATH) ..\FlyAR-Application\mainwindow.h -o debug\moc_mainwindow.cpp
 
@@ -1068,6 +1069,7 @@ debug\moc_flyar.cpp: ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\Q
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\FlyAR-Application\flyar.h
 	C:\Qt\Qt5.2.0\5.2.0\msvc2010\bin\moc.exe $(DEFINES) -D_MSC_VER=1600 -D_WIN32 $(INCPATH) ..\FlyAR-Application\flyar.h -o debug\moc_flyar.cpp
 
@@ -1539,6 +1541,7 @@ debug\main.obj: ..\FlyAR-Application\main.cpp ..\FlyAR-Application\mainwindow.h 
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QApplication
 
 debug\mainwindow.obj: ..\FlyAR-Application\mainwindow.cpp ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QtWidgets \
@@ -1988,7 +1991,8 @@ debug\mainwindow.obj: ..\FlyAR-Application\mainwindow.cpp ..\..\..\..\..\..\..\.
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QImage \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
-		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText
 
 debug\flyar.obj: ..\FlyAR-Application\flyar.cpp ..\FlyAR-Application\flyar.h \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QWidget \
@@ -2435,7 +2439,8 @@ debug\flyar.obj: ..\FlyAR-Application\flyar.cpp ..\FlyAR-Application\flyar.h \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QImage \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
-		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText
 
 debug\moc_mainwindow.obj: debug\moc_mainwindow.cpp 
 

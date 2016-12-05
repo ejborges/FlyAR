@@ -59,7 +59,7 @@ void MainWindow::save()
 
 void MainWindow::undoFunc()
 {
-    flyAR->removeLastItem();
+    flyAR->removeLastItem(-1);
     updateTable();
 }
 

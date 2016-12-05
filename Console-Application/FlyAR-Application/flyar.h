@@ -35,8 +35,8 @@ public:
     void setPenColor(const QColor &newColor);
     void setPenWidth(int newWidth);
     void setNewHeight(int newHeight);
-    void removeLastItem();
-    void FlyAR::removeElement();
+    void removeLastItem(int objNum);
+    void removeElement();
     void initializeScreen();
 
     bool isModified() const { return modified; }

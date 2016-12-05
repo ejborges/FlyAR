@@ -91,16 +91,31 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
             return;
         }
 
-        objType = QInputDialog::getInt(this, tr("FlyAR"),
-                                            tr("1=Circle\n2=Square"),
-                                            objType,
-                                            1, 2, 1, &shape);
+        vector<QString> vec;//vector to get the int value to save
+        vec.push_back(tr("Circle"));
+        vec.push_back(tr("Square"));
+        vec.push_back(tr("Cow"));
+        vec.push_back(tr("Rocket"));
+        vec.push_back(tr("UT Shield"));
+        vec.push_back(tr("UT Rocket"));
+
+        QStringList objects;
+        objects << tr("Circle")
+                << tr("Square")
+                << tr("Cow")
+                << tr("Rocket")
+                << tr("UT Shield")
+                << tr("UT Rocket");
+
+        QString item = QInputDialog::getItem(this, tr("FlyAR"),tr("Select an Object:"),objects,0,false,&shape);
+
+
         if (shape) //if the user cancels at anytime, cancel the drawing of the object
         {
             objHeight = QInputDialog::getInt(this, tr("FlyAR"),
-                                                tr("Give the object a height:"),
+                                                tr("Give the object a height (1-10):"),
                                                 objHeight,
-                                                1.0f, 15.0f, 1.0f, &ok);
+                                                1.0f, 10.0f, 1.0f, &ok);
             if (ok) //if the user cancels at anytime, cancel the drawing of the object
             {
                 objRadius = QInputDialog::getInt(this, tr("FlyAR"),
@@ -109,6 +124,14 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                                                     10, 30, 2, &rad);
                 if (rad) //if the user cancels at anytime, cancel the drawing of the object
                 {
+                    for (int i = 1; i <= vec.size(); ++i)
+                    {
+                        if (vec.at(i-1) == item)
+                        {
+                            objType = i;
+                            break;
+                        }
+                    }
                     drawObj(lastPoint);
 
                     objVec.push_back(obj());
@@ -131,21 +154,25 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
     }
 }
 
-void FlyAR::removeLastItem()
+void FlyAR::removeLastItem(int objNum)
 {
+    if (objNum == -1)
+    {
+        objNum = objCount;
+    }
     if (objCount > 0)
     {
         QColor currentPenColor = penColor();
         setPenColor(Qt::white);
         setPenWidth(20);
-        objRadius = objVec[objCount-1].radius*50.0f;
-        objType = objVec[objCount-1].type;
-        lastPoint.setX((objVec[objCount-1].x*40)+410-(objRadius/2));
-        lastPoint.setY(500+(objRadius/2)-(objVec[objCount-1].y*50));
+        objRadius = objVec[objNum-1].radius*50.0f;
+        objType = objVec[objNum-1].type;
+        lastPoint.setX((objVec[objNum-1].x*40)+410-(objRadius/2));
+        lastPoint.setY(500+(objRadius/2)-(objVec[objNum-1].y*50));
         drawObj(lastPoint);
         setPenColor(currentPenColor);
         setPenWidth(3);
-        objVec.pop_back();
+        objVec.erase(objVec.begin()+(objNum-1));
         --objCount;
     }
 }
@@ -159,18 +186,7 @@ void FlyAR::removeElement()
                                         1, objCount, 1, &ok);
     if (ok && (objElement-1 < objCount)) //if the user cancels at anytime, cancel the drawing of the object
     {
-        QColor currentPenColor = penColor();
-        setPenColor(Qt::white);
-        setPenWidth(20);
-        objRadius = objVec[objElement-1].radius*50.0f;
-        objType = objVec[objElement-1].type;
-        lastPoint.setX((objVec[objElement-1].x*40)+410-(objRadius/2));
-        lastPoint.setY(500+(objRadius/2)-(objVec[objElement-1].y*50));
-        drawObj(lastPoint);
-        setPenColor(currentPenColor);
-        setPenWidth(3);
-        objVec.erase(objVec.begin()+(objElement-1));
-        --objCount;
+        removeLastItem(objElement);
     }
 }
 
@@ -211,6 +227,14 @@ void FlyAR::drawObj(const QPoint &endPoint)
         } else if (objType == 2)
         {
             painter.drawRect(QRect(endPoint.x()-(objRadius/2), endPoint.y()-(objRadius/2), objRadius, objRadius));
+        } else if (objType >= 3)
+        {
+            if (myPenColor == Qt::white)
+            {
+                //for deleting a text object
+                painter.drawRect(QRect(endPoint.x()-(objRadius/2), endPoint.y()-(objRadius/2), 30, 20));
+            }
+            else painter.drawText(QRect(endPoint.x()-(objRadius/2), endPoint.y()-(objRadius/2), 30, 20), "TYPE" + QString::number(objType));
         }
 
         modified = true;
@@ -262,8 +286,8 @@ void FlyAR::initializeScreen()
     painter.setPen(QPen(myPenColor, myPenWidth, Qt::SolidLine, Qt::RoundCap,
                             Qt::RoundJoin));
 
-    painter.drawText(QRectF(386, 484, 60, 20),"QUAD");
-    QRectF rectangle(370.0, 480.0, 60.0, 80.0);
+    painter.drawText(QRectF(385, 484, 60, 20),"START");
+    QRectF rectangle(368.0, 480.0, 64.0, 80.0);
     int startAngle = 30 * 16;
     int spanAngle = 120 * 16;
     painter.drawChord(rectangle, startAngle, spanAngle);

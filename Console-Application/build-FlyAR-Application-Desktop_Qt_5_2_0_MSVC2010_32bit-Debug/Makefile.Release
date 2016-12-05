@@ -83,26 +83,6 @@ DESTDIR_TARGET = release\FlyAR-Application.exe
 	$<
 <<
 
-{release}.cpp{release\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
-	$<
-<<
-
-{release}.cc{release\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
-	$<
-<<
-
-{release}.cxx{release\}.obj::
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
-	$<
-<<
-
-{release}.c{release\}.obj::
-	$(CC) -c $(CFLAGS) $(INCPATH) -Forelease\ @<<
-	$<
-<<
-
 {.}.cpp{release\}.obj::
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
 	$<
@@ -119,6 +99,26 @@ DESTDIR_TARGET = release\FlyAR-Application.exe
 <<
 
 {.}.c{release\}.obj::
+	$(CC) -c $(CFLAGS) $(INCPATH) -Forelease\ @<<
+	$<
+<<
+
+{release}.cpp{release\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
+	$<
+<<
+
+{release}.cc{release\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
+	$<
+<<
+
+{release}.cxx{release\}.obj::
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -Forelease\ @<<
+	$<
+<<
+
+{release}.c{release\}.obj::
 	$(CC) -c $(CFLAGS) $(INCPATH) -Forelease\ @<<
 	$<
 <<
@@ -608,6 +608,7 @@ release\moc_mainwindow.cpp: ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\in
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\FlyAR-Application\mainwindow.h
 	C:\Qt\Qt5.2.0\5.2.0\msvc2010\bin\moc.exe $(DEFINES) -D_MSC_VER=1600 -D_WIN32 $(INCPATH) ..\FlyAR-Application\mainwindow.h -o release\moc_mainwindow.cpp
 
@@ -1056,6 +1057,7 @@ release\moc_flyar.cpp: ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\FlyAR-Application\flyar.h
 	C:\Qt\Qt5.2.0\5.2.0\msvc2010\bin\moc.exe $(DEFINES) -D_MSC_VER=1600 -D_WIN32 $(INCPATH) ..\FlyAR-Application\flyar.h -o release\moc_flyar.cpp
 
@@ -1527,6 +1529,7 @@ release\main.obj: ..\FlyAR-Application\main.cpp ..\FlyAR-Application\mainwindow.
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QApplication
 
 release\mainwindow.obj: ..\FlyAR-Application\mainwindow.cpp ..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QtWidgets \
@@ -1976,7 +1979,8 @@ release\mainwindow.obj: ..\FlyAR-Application\mainwindow.cpp ..\..\..\..\..\..\..
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QImage \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
-		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText
 
 release\flyar.obj: ..\FlyAR-Application\flyar.cpp ..\FlyAR-Application\flyar.h \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtWidgets\QWidget \
@@ -2423,7 +2427,8 @@ release\flyar.obj: ..\FlyAR-Application\flyar.cpp ..\FlyAR-Application\flyar.h \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QImage \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QPoint \
 		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QFile \
-		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtCore\QTextStream \
+		..\..\..\..\..\..\..\..\Qt\Qt5.2.0\5.2.0\msvc2010\include\QtGui\QStaticText
 
 release\moc_mainwindow.obj: release\moc_mainwindow.cpp 
 
