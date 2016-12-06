@@ -528,11 +528,23 @@ bool MS5611::readADCResult(){
     MS5611::ADC_conversion_in_progress = false;
 
     if(MS5611::writeByte(MS5611::devAddr, MS5611_ADC_READ)){
-        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_23_16));
-        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_15_8));
-        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_7_0));
+        //MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_23_16));
+        //MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_15_8));
+        //MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_7_0));
+
+        Wire.requestFrom(devAddr, 3);
+
+        if(Wire.available()) {
+            MS5611::conversion_23_16 = Wire.read();
+            MS5611::conversion_15_8 = Wire.read();
+            MS5611::conversion_7_0 = Wire.read();
+        }
+        else {
+            MS5611::conversion_23_16 = MS5611::conversion_15_8 = MS5611::conversion_7_0 = 0;
+            MS5611::adc_error = 1;
+        }
     }
-    else MS5611::adc_error = 1;
+    else MS5611::adc_error = 2;
 
     if(MS5611::reading_D1_conversion)
          MS5611::D1 = (MS5611::conversion_23_16 << 16) | (MS5611::conversion_15_8 << 8) | MS5611::conversion_7_0;
