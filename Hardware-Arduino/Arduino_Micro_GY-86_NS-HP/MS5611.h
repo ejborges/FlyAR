@@ -184,7 +184,8 @@ private:
     // The MS5611 handle's I2C communication differently than other I2C devices.
     // Here, we don't need to specify a register address, just the device address and data.
     bool writeByte(uint8_t devAddr, uint8_t data);
-    int8_t readByte(uint8_t devAddr, uint8_t *data);
+    //int8_t readByte(uint8_t devAddr, uint8_t *data);
+    int8_t readByte(uint8_t devAddr, uint32_t *data);
     int8_t readWord(uint8_t devAddr, uint16_t *data);
 
     #ifndef DEFINE_MIN_MAX_CONSTANTS
