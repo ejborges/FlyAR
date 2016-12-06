@@ -227,7 +227,8 @@ bool MS5611::writeByte(uint8_t devAddr, uint8_t data){
  * @param data Container for byte value read from device
  * @return Number of bytes read (-1 indicates failure)
  */
-int8_t MS5611::readByte(uint8_t devAddr, uint8_t *data){
+//int8_t MS5611::readByte(uint8_t devAddr, uint8_t *data){
+int8_t MS5611::readByte(uint8_t devAddr, uint32_t *data){
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
