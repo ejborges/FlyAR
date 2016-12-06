@@ -93,7 +93,10 @@ VectorFloat gravity;    // [x, y, z]            gravity vector
 int16_t gyro[3];        //To store gyro's measures
 int16_t mx, my, mz;     //To store magnetometer readings
 float euler[3];         // [psi, theta, phi]    Euler angle container
-float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector; radians; yaw = [-pi, pi], pitch = [-pi/2, pi/2], roll = [-pi/2, pi/2]
+float yaw;              // yaw degrees = [0, 360], 
+float pitch;            // pitch degrees = [0, 360],
+float roll;             // roll degrees = [0, 360],
 
 // To check MPU6050 DMP frecuency  (it can be changed it the MotionApps v2 .h file)
 int time1,time1old;
@@ -455,13 +458,25 @@ void loop() {
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    
+    yaw = (ypr[0] * 180/M_PI) + 180;
+    
+    if(gravity.z < 0) pitch = (ypr[1]*(-180/M_PI)) + 180;
+    else if(ypr[1] < 0) pitch = 360 + (ypr[1] * 180/M_PI);
+    else pitch = ypr[1] * 180/M_PI;
+    
+    if(gravity.z < 0) roll = (ypr[2]*(-180/M_PI)) + 180;
+    else if(ypr[2] < 0) roll = 360 + (ypr[2] * 180/M_PI);
+    else roll = ypr[2] * 180/M_PI;
+    
     #ifdef serial_console_out
       Serial.print("ypr\t");
-      Serial.print(ypr[0] * 180/M_PI);
+      //Serial.print(ypr[0] * 180/M_PI);
+      Serial.print(yaw);
       Serial.print("\t");
-      Serial.print(ypr[1] * 180/M_PI);
+      Serial.print(pitch);
       Serial.print("\t");
-      Serial.println(ypr[2] * 180/M_PI);
+      Serial.println(roll);
     #endif //serial_console_out
     //#endif //OUTPUT_READABLE_YAWPITCHROLL
 
@@ -559,11 +574,11 @@ void loop() {
     #ifdef serial_console_out
       Serial.print("DMP Freq:\t");
       Serial.println(frec1);
-    #endif //serial_console_out
 
-    // blink LED to indicate activity
-    blinkState = !blinkState;
-    digitalWrite(LED_PIN, blinkState);
+      // blink LED to indicate activity
+      blinkState = !blinkState;
+      digitalWrite(LED_PIN, blinkState);
+    #endif //serial_console_out
   }
 
 
@@ -571,11 +586,11 @@ void loop() {
   #ifndef serial_console_out
 
     if(Serial.read() > 0){
-      Serial.print((ypr[0] * 180/M_PI) + yaw_drift_average);
+      Serial.print(yaw);
       Serial.print(",");
-      Serial.print(ypr[1] * 180/M_PI);
+      Serial.print(pitch);
       Serial.print(",");
-      Serial.println(ypr[2] * 180/M_PI);
+      Serial.println(roll);
     }
   #endif // #ifndef serial_console_out
 
