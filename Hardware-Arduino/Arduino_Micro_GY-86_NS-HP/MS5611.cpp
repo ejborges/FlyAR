@@ -526,9 +526,9 @@ bool MS5611::readADCResult(){
     MS5611::ADC_conversion_in_progress = false;
 
     if(MS5611::writeByte(MS5611::devAddr, MS5611_ADC_READ)){
-        MS5611::readByte(MS5611::devAddr, MS5611::conversion_23_16);
-        MS5611::readByte(MS5611::devAddr, MS5611::conversion_15_8);
-        MS5611::readByte(MS5611::devAddr, MS5611::conversion_7_0);
+        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_23_16));
+        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_15_8));
+        MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_7_0));
     }
 
     if(MS5611::reading_D1_conversion)
