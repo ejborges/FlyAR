@@ -15,7 +15,7 @@ import gc
 from time import time
 
 USE_CAMERA = False
-DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,0.0), layer=3)
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,1.0), layer=3)
 
 shapesToDraw = read_config()
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
@@ -31,11 +31,33 @@ objectNumber = 1
 arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (100,100,100,255))
 shader = pi3d.Shader('uv_flat')
 for shape in shapesToDraw:
-    ringRots = 12 if shape.shapeType == 1 else 4
-    newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.05)
-    newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
-    logMessage = str(time()) + ":[FLY-AR] Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
-    logging.info(logMessage)
+    if shape.shapeType == 1 or shape.shapeType == 2:
+        # Build a torus
+        ringRots = 12 if shape.shapeType == 1 else 4
+        newShape = pi3d.Torus(radius=shape.radius, ringrots=ringRots, sides=ringRots, x=shape.position[0], y=shape.position[1], z=shape.position[2], rx=90, rz=45, thickness=0.05)
+        newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
+        logMessage = str(time()) + ":[FLY-AR] Created Torus with radius: {}, Sides: {}, Position: {}, Color: {}".format(shape.radius, ringRots, shape.position, shape.color)
+        logging.info(logMessage)
+    elif shape.shapeType == 3:
+        # Build a cow
+        newShape = pi3d.Model(file_string='objs/cow.obj', name='cow' + str(objectNumber), x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius, sy=shape.radius, sz=shape.radius)
+        newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
+        logMessage = str(time()) + ":[FLY-AR] Created cow with scale: {}, position: {}, color: {}".format(shape.radius, shape.position, shape.color)
+        logging.info(logMessage)
+    elif shape.shapeType == 4:
+        # Build a rocket
+        newShape = pi3d.Model(file_string='objs/phoenix/Aim-54_Phoenix.obj', name='rocket' + str(objectNumber), x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius*.01, sy=shape.radius*.01, sz=shape.radius*.01)
+        newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
+        logMessage = str(time()) + ":[FLY-AR] Created rocket with scale: {}, position: {}, color: {}".format(shape.radius, shape.position, shape.color)
+        logging.info(logMessage)
+    else:
+        # It is either the UT shield or rocket logo, both of which are sprites
+        filePath = 'sprites/toledo_shield.gif' if shape.shapeType == 5 else 'sprites/ToledoRockets.png'
+        newShape = pi3d.ImageSprite(texture=filePath, x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius, sy=shape.radius, sz=shape.radius, shader=shader)
+        logMessage = str(time()) + ":[FLY-AR] Created image with path: {}, position: {}, scale: {}".format(filePath, shape.position, shape.radius)
+        logging.info(logMessage)
+
+
     pi3dShapes.append(newShape)
 
     # Add the corresponding number to each shape
@@ -45,13 +67,6 @@ for shape in shapesToDraw:
     objectNumber += 1
 
 
-
-#Let's have a cow
-cow = pi3d.Model(file_string='objs/AVMT300/AVMT300.obj', name='cow', z=5, sx=.2, sy=.2, sz=.2)
-
-# Add a sprite
-utLogo = pi3d.ImageSprite(texture='sprites/toledo_shield.gif', z=5.0, sx=1, sy=1, sz=1, shader=shader)
-utRocket = pi3d.ImageSprite(texture='sprites/ToledoRockets.png', z=5.0, x=-1.0, shader=shader)
 
 # Fetch key presses
 mykeys = pi3d.Keyboard()
@@ -77,10 +92,6 @@ while DISPLAY.loop_running():
         shape.draw()
     for text in objectNumbers:
         text.draw()
-
-    cow.draw()
-    #utLogo.draw()
-    #utRocket.draw()
 
     # If this is the first time, get the original values
     if first:
