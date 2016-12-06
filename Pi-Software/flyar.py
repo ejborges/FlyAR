@@ -30,6 +30,13 @@ objectNumbers = []
 objectNumber = 1
 arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (100,100,100,255))
 shader = pi3d.Shader('uv_flat')
+
+# Build each distinct shape here. This makes it faster
+ring = pi3d.Torus(radius=0, ringrots=12, sides=12, x=0, y=0, z=3, rx=90, rz=45, thickness=0.05)
+ring.draw()
+ring.position(0, 5, 3)
+ring.draw()
+
 for shape in shapesToDraw:
     if shape.shapeType == 1 or shape.shapeType == 2:
         # Build a torus
