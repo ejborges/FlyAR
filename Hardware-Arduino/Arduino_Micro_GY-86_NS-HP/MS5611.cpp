@@ -521,7 +521,8 @@ bool MS5611::initiateD2Conversion(uint8_t osr){
  * @return Status of operation (true = success)
  */
 bool MS5611::readADCResult(){
-    if(!(MS5611::ADC_conversion_in_progress) || (micros() < ((MS5611::conversion_start_time + MS5611::osr_adc_time_us) % (1ULL << 32))))
+    //if(!(MS5611::ADC_conversion_in_progress) || (micros() < ((MS5611::conversion_start_time + MS5611::osr_adc_time_us) % (1ULL << 32))))
+    if(!(MS5611::ADC_conversion_in_progress) || (micros() < (MS5611::conversion_start_time + MS5611::osr_adc_time_us)))
         return false;
 
     MS5611::ADC_conversion_in_progress = false;
@@ -531,12 +532,17 @@ bool MS5611::readADCResult(){
         MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_15_8));
         MS5611::readByte(MS5611::devAddr, &(MS5611::conversion_7_0));
     }
+    else MS5611::adc_error = 1;
 
     if(MS5611::reading_D1_conversion)
          MS5611::D1 = (MS5611::conversion_23_16 << 16) | (MS5611::conversion_15_8 << 8) | MS5611::conversion_7_0;
     else MS5611::D2 = (MS5611::conversion_23_16 << 16) | (MS5611::conversion_15_8 << 8) | MS5611::conversion_7_0;
 
     return true;
+}
+
+uint8_t MS5611::getAdcError() {
+    return MS5611::adc_error;
 }
 
 /** Calculate the difference between actual and reference temperature

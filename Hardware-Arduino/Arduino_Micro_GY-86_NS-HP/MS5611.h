@@ -122,6 +122,7 @@ public:
 
     // debug functions
     uint8_t getPromError();
+    uint8_t getAdcError();
     int32_t getTestPressure();
     uint32_t getPrivateVariable(uint8_t variable);
 
@@ -204,6 +205,7 @@ private:
 
     // debug functions/variables
     uint8_t prom_error;
+    uint8_t adc_error = 0;
     int32_t privateTestPressure = 0;
 };
 

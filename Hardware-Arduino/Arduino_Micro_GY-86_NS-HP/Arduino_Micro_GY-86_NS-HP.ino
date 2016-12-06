@@ -207,6 +207,9 @@ void setup() {
         Serial.print(F("--testPressure out of bounds; should be between [1000, 120000]; = "));
         Serial.println(baro.getTestPressure());
 
+        Serial.print(F("adc_error = "));
+        Serial.println(baro.getAdcError());
+
         Serial.println(F("--MS5611 private variables:"));
         Serial.print(F("---devAddr = "));
         Serial.println(baro.getPrivateVariable(0));
