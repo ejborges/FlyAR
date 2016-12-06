@@ -14,10 +14,14 @@ import math
 import gc
 from time import time
 
-USE_CAMERA = False
-DISPLAY = pi3d.Display.create(x=0, y=0, background=(100.0,100.0,100.0,1.0), layer=3)
+# Flags to use during debug mode
+USE_CAMERA = True
+DEBUG = True
+
+DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,255.0,0.0,1.0), layer=3)
 
 shapesToDraw = read_config()
+TEXT_CAMERA = pi3d.Camera(is_3d=False)
 CAMERA = pi3d.Camera(at=(0, 0, 10), eye=(0, 0, 0))
 
 if USE_CAMERA:
@@ -31,8 +35,9 @@ objectNumber = 1
 arialFont = pi3d.Font("fonts/FreeMonoBoldOblique.ttf", (100,100,100,255))
 shader = pi3d.Shader('uv_flat')
 
-# Build each distinct shape here. This makes it faster
-ring = pi3d.Torus(radius=0, ringrots=12, sides=12, x=0, y=0, z=3, rx=90, rz=45, thickness=0.05)
+# Build each distinct 3D model here. This makes it faster as it will use the same batch of vertices, reducing load time
+cowModel = pi3d.Model(file_string='objs/cow.obj')
+rocketModel = pi3d.Model(file_string='objs/phoenix/Aim-54_Phoenix.obj')
 
 for shape in shapesToDraw:
     if shape.shapeType == 1 or shape.shapeType == 2:
@@ -44,13 +49,17 @@ for shape in shapesToDraw:
         logging.info(logMessage)
     elif shape.shapeType == 3:
         # Build a cow
-        newShape = pi3d.Model(file_string='objs/cow.obj', name='cow' + str(objectNumber), x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius, sy=shape.radius, sz=shape.radius)
+        newShape = cowModel.clone()
+        newShape.position(shape.position[0], shape.position[1], shape.position[2])
+        newShape.scale(shape.radius, shape.radius, shape.radius)
         newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
         logMessage = str(time()) + ":[FLY-AR] Created cow with scale: {}, position: {}, color: {}".format(shape.radius, shape.position, shape.color)
         logging.info(logMessage)
     elif shape.shapeType == 4:
         # Build a rocket
-        newShape = pi3d.Model(file_string='objs/phoenix/Aim-54_Phoenix.obj', name='rocket' + str(objectNumber), x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius*.01, sy=shape.radius*.01, sz=shape.radius*.01)
+        newShape = rocketModel.clone()
+        newShape.position(shape.position[0], shape.position[1], shape.position[2])
+        newShape.scale(shape.radius*.01, shape.radius*.01, shape.radius*.01)
         newShape.set_material((shape.color[0]/255, shape.color[1]/255, shape.color[2]/255))
         logMessage = str(time()) + ":[FLY-AR] Created rocket with scale: {}, position: {}, color: {}".format(shape.radius, shape.position, shape.color)
         logging.info(logMessage)
@@ -89,19 +98,16 @@ cameraZ = 0
 
 sensorData = FlyARData()
 first = True
+screenshotNumber = 0
 while DISPLAY.loop_running():
     sensorData.update()
     CAMERA.reset()
     for shape in pi3dShapes:
-        shape.draw()
+        shape.draw(camera=CAMERA)
     for text in objectNumbers:
-        text.draw()
+        text.draw(camera=CAMERA)
         
     
-    ring.draw()
-    ring.position(0, 5, 3)
-    ring.draw()
-
     # If this is the first time, get the original values
     if first:
         ORIGINAL_YAW = sensorData.yaw
@@ -117,6 +123,14 @@ while DISPLAY.loop_running():
     CAMERA.rotateX(cameraX)
     CAMERA.rotateZ(cameraZ)
 
+    # Draw yaw, pitch and roll if in debug mode
+    if DEBUG:
+        displayString = "Yaw: {0:.2f}\nPitch: {1:.2f}\nRoll: {2:.2f}".format(cameraY, cameraX, cameraZ)
+        positionInfo = pi3d.FixedString("fonts/FreeMonoBoldOblique.ttf", displayString, camera=TEXT_CAMERA, color=(255,255,255,255), font_size=18, margin=0.0, justify='R', background_color=(0,0,0,255), shader=shader, f_type='SMOOTH')
+        positionInfo.sprite.positionX(300)
+        positionInfo.sprite.positionY(-300)
+        positionInfo.draw()
+
     gc.collect()
 
     k = mykeys.read()
@@ -127,3 +141,12 @@ while DISPLAY.loop_running():
             piCamera.stop_preview()
         DISPLAY.destroy()
         break
+    elif k == 10:
+        fileName = 'screenshot' + str(screenshotNumber) + '.jpg'
+        pi3d.screenshot(fileName)
+        logging.info('Created screenshot with name: {}'.format(fileName))
+        if USE_CAMERA:
+            fileName = 'camera' + str(screenshotNumber) + '.jpg'
+            piCamera.capture(fileName)
+            logging.info('Took picture with name: {}'.format(fileName))
+        screenshotNumber += 1
