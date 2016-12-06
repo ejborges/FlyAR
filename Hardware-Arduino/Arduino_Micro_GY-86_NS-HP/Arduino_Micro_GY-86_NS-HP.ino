@@ -478,6 +478,13 @@ void loop() {
         Serial.print(aaReal.y);
         Serial.print("\t");
         Serial.println(aaReal.z);
+
+        Serial.print("grav\t");
+        Serial.print(gravity.x);
+        Serial.print("\t");
+        Serial.print(gravity.y);
+        Serial.print("\t");
+        Serial.println(gravity.z);
       #endif //serial_console_out
     #endif
 
