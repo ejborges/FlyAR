@@ -34,7 +34,7 @@
 #include "MS5611.h"
 
 
-#define serial_console_out
+//#define serial_console_out
 
 #define MPU6050_INTERRUPT_PIN 0
 #define MS5611_INTERRUPT_PIN 1
@@ -55,26 +55,26 @@ MS5611 baro;
 // from the FIFO. Note this also requires gravity vector calculations.
 // Also note that yaw/pitch/roll angles suffer from gimbal lock (for
 // more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
-#define OUTPUT_READABLE_YAWPITCHROLL
+//#define OUTPUT_READABLE_YAWPITCHROLL
 
 // uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
 // components with gravity removed. This acceleration reference frame is
 // not compensated for orientation, so +X is always +X according to the
 // sensor, just without the effects of gravity. If you want acceleration
 // compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
-#define OUTPUT_READABLE_REALACCEL
+//#define OUTPUT_READABLE_REALACCEL
 
 // uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
 // is present in this case). Could be quite handy in some cases.
-#define OUTPUT_READABLE_WORLDACCEL
+//#define OUTPUT_READABLE_WORLDACCEL
 
-#define OUTPUT_READABLE_MAGNETOMETER
-#define OUTPUT_READABLE_HEADING
+//#define OUTPUT_READABLE_MAGNETOMETER
+//#define OUTPUT_READABLE_HEADING
 
 #define OUTPUT_READABLE_PRESSURE
-#define OUTPUT_READABLE_TEMPERATURE
+//#define OUTPUT_READABLE_TEMPERATURE
 
 // MPU6050 control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -110,6 +110,10 @@ uint8_t baro_error_code;
 bool received_D1_conversion = false;
 float pressure_mbar = 0.0;
 float temperature_c = 0.0;
+const int pressure_mbar_history_length = 4;
+float pressure_mbar_history[pressure_mbar_history_length];
+float pressure_mbar_history_sum;
+float pressure_mbar_average;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINES               ===
@@ -369,6 +373,16 @@ void setup() {
     #endif // serial_console_out
   }
 
+  #if defined(OUTPUT_READABLE_PRESSURE) || defined(OUTPUT_READABLE_TEMPERATURE)
+    baro.initiateD1Conversion(MS5611_OSR_4096);
+    while(!(baro.readADCResult())){}
+    baro.initiateD2Conversion(MS5611_OSR_4096);
+    while(!(baro.readADCResult())){}
+    pressure_mbar = baro.getPressure_float();
+    
+    for(int i = 0; i < pressure_mbar_history_length; ++i) pressure_mbar_history[i] = pressure_mbar;
+  #endif
+  
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
 }
@@ -389,20 +403,30 @@ void loop() {
 //  }
 
   
-    
-  // request and calculate barometer pressure and temperature
-  if(received_D1_conversion && baro.readADCResult()){
-      received_D1_conversion = false;
-      pressure_mbar = baro.getPressure_float();
-      temperature_c = baro.getTemperature_float();
-  }
-  else{
-      baro.initiateD1Conversion(MS5611_OSR_4096);
-      if(baro.readADCResult()){
-          received_D1_conversion = true;
-          baro.initiateD2Conversion(MS5611_OSR_4096);
-      }
-  }
+  #if defined(OUTPUT_READABLE_PRESSURE) || defined(OUTPUT_READABLE_TEMPERATURE)
+    // request and calculate barometer pressure and temperature
+    if(received_D1_conversion && baro.readADCResult()){
+        received_D1_conversion = false;
+        pressure_mbar = baro.getPressure_float();
+        temperature_c = baro.getTemperature_float();
+  
+        pressure_mbar_history[0] = pressure_mbar_history[1];
+        pressure_mbar_history[1] = pressure_mbar_history[2];
+        pressure_mbar_history[2] = pressure_mbar_history[3];
+        pressure_mbar_history[3] = pressure_mbar;
+
+        pressure_mbar_history_sum = 0;
+        for(int i = 0; i < pressure_mbar_history_length; ++i) pressure_mbar_history_sum += pressure_mbar_history[i];
+        pressure_mbar_average = pressure_mbar_history_sum / pressure_mbar_history_length;
+    }
+    else{
+        baro.initiateD1Conversion(MS5611_OSR_4096);
+        if(baro.readADCResult()){
+            received_D1_conversion = true;
+            baro.initiateD2Conversion(MS5611_OSR_4096);
+        }
+    }
+  #endif
 
   // reset interrupt flag and get INT_STATUS byte
   mpuInterrupt = false;
@@ -593,7 +617,9 @@ void loop() {
       Serial.print(",");
       Serial.print(pitch);
       Serial.print(",");
-      Serial.println(roll);
+      Serial.print(roll);
+      Serial.print(",");
+      Serial.println(pressure_mbar_average);
     }
   #endif // #ifndef serial_console_out
 
