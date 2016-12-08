@@ -15,7 +15,7 @@ import gc
 from time import time
 
 # Flags to use during debug mode
-USE_CAMERA = True
+USE_CAMERA = False
 DEBUG = True
 
 DISPLAY = pi3d.Display.create(x=0, y=0, background=(0.0,255.0,0.0,1.0), layer=3)
@@ -66,7 +66,7 @@ for shape in shapesToDraw:
     else:
         # It is either the UT shield or rocket logo, both of which are sprites
         filePath = 'sprites/toledo_shield.gif' if shape.shapeType == 5 else 'sprites/ToledoRockets.png'
-        newShape = pi3d.ImageSprite(texture=filePath, x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius, sy=shape.radius, sz=shape.radius, shader=shader)
+        newShape = pi3d.ImageSprite(texture=filePath, x=shape.position[0], y=shape.position[1], z=shape.position[2], sx=shape.radius*2, sy=shape.radius*2, sz=shape.radius*2, shader=shader)
         logMessage = str(time()) + ":[FLY-AR] Created image with path: {}, position: {}, scale: {}".format(filePath, shape.position, shape.radius)
         logging.info(logMessage)
 
