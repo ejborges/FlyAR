@@ -34,8 +34,6 @@
 #include "MS5611.h"
 
 
-//#define serial_console_out
-
 #define MPU6050_INTERRUPT_PIN 0
 #define MS5611_INTERRUPT_PIN 1
 #define LED_PIN LED_BUILTIN
@@ -50,31 +48,33 @@ HMC5883L mag;
 // MS5611 class default I2C address is 0x77
 MS5611 baro;
 
+#define serial_console_out
+
 // uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
 // pitch/roll angles (in degrees) calculated from the quaternions coming
 // from the FIFO. Note this also requires gravity vector calculations.
 // Also note that yaw/pitch/roll angles suffer from gimbal lock (for
 // more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
-//#define OUTPUT_READABLE_YAWPITCHROLL
+#define OUTPUT_READABLE_YAWPITCHROLL
 
 // uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
 // components with gravity removed. This acceleration reference frame is
 // not compensated for orientation, so +X is always +X according to the
 // sensor, just without the effects of gravity. If you want acceleration
 // compensated for orientation, us OUTPUT_READABLE_WORLDACCEL instead.
-//#define OUTPUT_READABLE_REALACCEL
+#define OUTPUT_READABLE_REALACCEL
 
 // uncomment "OUTPUT_READABLE_WORLDACCEL" if you want to see acceleration
 // components with gravity removed and adjusted for the world frame of
 // reference (yaw is relative to initial orientation, since no magnetometer
 // is present in this case). Could be quite handy in some cases.
-//#define OUTPUT_READABLE_WORLDACCEL
+#define OUTPUT_READABLE_WORLDACCEL
 
-//#define OUTPUT_READABLE_MAGNETOMETER
-//#define OUTPUT_READABLE_HEADING
+#define OUTPUT_READABLE_MAGNETOMETER
+#define OUTPUT_READABLE_HEADING
 
 #define OUTPUT_READABLE_PRESSURE
-//#define OUTPUT_READABLE_TEMPERATURE
+#define OUTPUT_READABLE_TEMPERATURE
 
 // MPU6050 control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -89,6 +89,7 @@ Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
 VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+int32_t aaWorld_z_average_offset; // aaWorld.z seems to have a constant value around 200 when device sitting still. Take average offset and subtract from z
 VectorFloat gravity;    // [x, y, z]            gravity vector
 int16_t gyro[3];        //To store gyro's measures
 int16_t mx, my, mz;     //To store magnetometer readings
@@ -97,6 +98,8 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 float yaw;              // yaw degrees = [0, 360], 
 float pitch;            // pitch degrees = [0, 360],
 float roll;             // roll degrees = [0, 360],
+
+float height;
 
 // To check MPU6050 DMP frecuency  (it can be changed it the MotionApps v2 .h file)
 int time1,time1old;
@@ -132,6 +135,8 @@ void dmpDataReady() {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 void setup() {
+
+  delay(2000); //wait 2 seconds for user to let go of and place down the device in order to get clean and steady first measurements.
 
   Wire.begin(); // join i2c bus
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
@@ -382,6 +387,83 @@ void setup() {
     
     for(int i = 0; i < pressure_mbar_history_length; ++i) pressure_mbar_history[i] = pressure_mbar;
   #endif
+
+  height = 0;
+
+  //delay(4000);
+
+  aaWorld_z_average_offset = 0;
+  int aaWorld_z_average_loops = 20;
+  unsigned long start_time = micros();
+  if (!dmpReady) {delay(15000); Serial.println(F("dmp not ready! Exiting loop();")); return;}
+  else{
+    for(int i = 0; i < aaWorld_z_average_loops; ++i){
+      // reset interrupt flag and get INT_STATUS byte
+      mpuInterrupt = false;
+      mpuIntStatus = mpu.getIntStatus();
+    
+      // get current FIFO count
+      fifoCount = mpu.getFIFOCount();
+    
+      // check for overflow (this should never happen unless our code is too inefficient)
+      if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
+        // reset so we can continue cleanly
+        mpu.resetFIFO();
+        #ifdef serial_console_out
+          Serial.println(F("FIFO overflow!"));
+        #endif // serial_console_out
+    
+        // otherwise, check for DMP data ready interrupt (this should happen frequently)
+      }
+      else if (mpuIntStatus & 0x02) {
+        // wait for correct available data length, should be a VERY short wait
+        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+    
+        // read a packet from FIFO
+        mpu.getFIFOBytes(fifoBuffer, packetSize);
+    
+        // track FIFO count here in case there is > 1 packet available
+        // (this lets us immediately read more without waiting for an interrupt)
+        fifoCount -= packetSize;
+
+        // Check DMP frecuency
+        //time1=micros()-time1old;
+        //time1old=micros();
+        //frec1=1000000/time1;
+
+        if(micros() < (start_time + 1000000)){i--; continue;}
+
+        mpu.dmpGetQuaternion(&q, fifoBuffer);
+        mpu.dmpGetAccel(&aa, fifoBuffer);
+        mpu.dmpGetGravity(&gravity, &q);
+        mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+        mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+
+        #ifdef serial_console_out
+          Serial.print(F("aaWorld.z = "));
+          Serial.println(aaWorld.z);
+        #endif
+
+        aaWorld_z_average_offset += aaWorld.z;
+
+      }
+      else{
+        delay(10);
+        i--;
+      }
+    }
+    aaWorld_z_average_offset /= aaWorld_z_average_loops;
+  }
+
+#ifdef serial_console_out
+  Serial.print(F("aaWorld_z_average_offset = "));
+  Serial.println(aaWorld_z_average_offset);
+  // wait for ready
+  Serial.println(F("\nSend any character to begin DMP programming: "));
+  while (Serial.available() && Serial.read()); // empty buffer
+  while (!Serial.available());                 // wait for data
+  while (Serial.available() && Serial.read()); // empty buffer again
+#endif
   
   // configure LED for output
   pinMode(LED_PIN, OUTPUT);
@@ -544,7 +626,7 @@ void loop() {
         Serial.print("\t");
         Serial.print(aaWorld.y);
         Serial.print("\t");
-        Serial.println(aaWorld.z);
+        Serial.println(aaWorld.z - aaWorld_z_average_offset);
       #endif //serial_console_out
     #endif //OUTPUT_READABLE_WORLDACCEL
 
