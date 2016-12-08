@@ -42,10 +42,24 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::open()
 {
+    if (flyAR->isModified()) {
+
+       QMessageBox::StandardButton ret;
+       ret = QMessageBox::question(this, tr("FlyAR"),
+                          tr("This will overwrite any existing elements.\n"
+                             "Do you want to continue?"),
+                          QMessageBox::Yes | QMessageBox::Cancel);
+       if (ret == QMessageBox::Yes)
+       {
+           clearImage();
+       }
+       else return; //Otherwise leave the function.
+    }
+
     QString fileName = QFileDialog::getOpenFileName(this,
                                tr("Open File"), QDir::currentPath());
     if (!fileName.isEmpty())
-    {
+    {        
         flyAR->openImage(fileName);
         flyAR->initializeScreen();
     }
@@ -53,7 +67,6 @@ void MainWindow::open()
 
 void MainWindow::save()
 {
-    updateTable();
     saveFile();
 }
 
@@ -65,7 +78,6 @@ void MainWindow::undoFunc()
 
 void MainWindow::removeFunc()
 {
-    updateTable();
     flyAR->removeElement();
     updateTable();
 }
@@ -91,6 +103,23 @@ void MainWindow::updateTable()
     }
 }
 
+void MainWindow::editElement()
+{
+    if (flyAR->objCount > 0)
+    {
+        bool ok = false;
+        int elementToEdit = 0;
+        elementToEdit = QInputDialog::getInt(this, tr("FlyAR"),
+                                            tr("Select which element to edit:"),
+                                            elementToEdit,
+                                            1, flyAR->objCount, 1, &ok);
+        if (ok)
+        {
+            flyAR->editElement(elementToEdit);
+        }
+    }
+}
+
 void MainWindow::penColor()
 {
     QColor newColor = QColorDialog::getColor(flyAR->penColor());
@@ -105,8 +134,8 @@ void MainWindow::penWidth()
                                         tr("Select pen width:"),
                                         flyAR->penWidth(),
                                         1, 10, 1, &ok);
-    if (ok)
-        flyAR->setPenWidth(newWidth);
+
+    if (ok) flyAR->setPenWidth(newWidth);
 }
 
 void MainWindow::about()
@@ -119,11 +148,15 @@ void MainWindow::about()
                "in the menu bar and open an image file to show where the obstacles  "
                "would go from a top down sort of view.  When you click on the screen "
                "you will have to specify first what type of object you would like to show, "
-               "and then add a value between 1-15 which represents the height of the object "
+               "and then add a value between 1-10 which represents the height of the object "
                "off the ground.  You will also have to specify the radius of the object "
                "that you selected. "
                "The data of each position will be stored in a comma separated file "
-               "that's location is specified by you, the user.</p> "));
+               "who's location is specified by you, the user.</p>"
+               "<p>There are many options that are available from the application."
+               " Most of them are self explanatory. \nUndo last entry (removes the last entry on the board)."
+               "\nRemove Element allows you to splice out single elements anywhere on the table."
+               "is placed at the bottom center of the screen. </p>"));
 }
 
 void MainWindow::createActions()
@@ -148,9 +181,9 @@ void MainWindow::createActions()
     removeAct->setShortcut(tr("Ctrl+D"));
     connect(removeAct, SIGNAL(triggered()), this, SLOT(removeFunc()));
 
-    updateTableAct = new QAction(tr("&Update Table Values"), this);
-    updateTableAct->setShortcut(tr("Ctrl+U"));
-    connect(updateTableAct, SIGNAL(triggered()), this, SLOT(updateTable()));
+    editElementAct = new QAction(tr("&Edit Element's Values"), this);
+    editElementAct->setShortcut(tr("Ctrl+U"));
+    connect(editElementAct, SIGNAL(triggered()), this, SLOT(editElement()));
 
     penColorAct = new QAction(tr("&Pen Color..."), this);
     connect(penColorAct, SIGNAL(triggered()), this, SLOT(penColor()));
@@ -178,7 +211,7 @@ void MainWindow::createMenus()
     optionMenu = new QMenu(tr("&Options"), this);
     optionMenu->addAction(undoAct);
     optionMenu->addAction(removeAct);
-    optionMenu->addAction(updateTableAct);
+    optionMenu->addAction(editElementAct);
     optionMenu->addAction(penColorAct);
     optionMenu->addSeparator();
     optionMenu->addAction(clearScreenAct);
@@ -194,7 +227,6 @@ void MainWindow::createMenus()
 
 bool MainWindow::maybeSave()
 {
-    updateTable();
     if (flyAR->isModified()) {
        QMessageBox::StandardButton ret;
        ret = QMessageBox::warning(this, tr("FlyAR"),

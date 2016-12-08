@@ -30,11 +30,13 @@ public:
 
     vector<obj> objVec;
 
+    int objCount;
     bool openImage(const QString &fileName);
     bool saveImage(const QString &fileName);
     void setPenColor(const QColor &newColor);
     void setPenWidth(int newWidth);
     void setNewHeight(int newHeight);
+    void editElement(int objNum);
     void removeLastItem(int objNum);
     void removeElement();
     void initializeScreen();
@@ -60,7 +62,6 @@ private:
     bool modified;
     bool scribbling;
     int myPenWidth;
-    int objCount;
     int objType;
     float objHeight;
     float objRadius;

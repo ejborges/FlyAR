@@ -18,12 +18,15 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
 
+public slots:
+    void updateTable();
+
 private slots:
     void open();
     void save();
     void undoFunc();
     void removeFunc();
-    void updateTable();
+    void editElement();
     void penColor();
     void penWidth();
     void about();
@@ -48,7 +51,7 @@ private:
     QAction *exitAct;
     QAction *undoAct;
     QAction *removeAct;
-    QAction *updateTableAct;
+    QAction *editElementAct;
     QAction *penColorAct;
     QAction *penWidthAct;
     QAction *clearScreenAct;

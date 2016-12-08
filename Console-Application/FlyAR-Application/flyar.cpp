@@ -1,4 +1,5 @@
 #include "flyar.h"
+#include "mainwindow.h"
 
 FlyAR::FlyAR(QWidget *parent) :
     QWidget(parent)
@@ -11,6 +12,7 @@ FlyAR::FlyAR(QWidget *parent) :
     objType = 1;
     objRadius = 20.0f;
     initializeScreen();
+    (MainWindow*)parent;
 }
 
 bool FlyAR::openImage(const QString &fileName)
@@ -50,7 +52,7 @@ void FlyAR::clearImage()
     objCount = 0; //reset the counter
     objVec.clear(); //empty the vector
     initializeScreen();
-    modified = true;
+    modified = false;
     update();
 }
 
@@ -124,7 +126,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                                                     10, 30, 2, &rad);
                 if (rad) //if the user cancels at anytime, cancel the drawing of the object
                 {
-                    for (int i = 1; i <= vec.size(); ++i)
+                    for (unsigned int i = 1; i <= vec.size(); ++i)
                     {
                         if (vec.at(i-1) == item)
                         {
@@ -149,6 +151,7 @@ void FlyAR::mousePressEvent(QMouseEvent *event)
                 }
             }
         }
+        ((MainWindow*)parent()->parent())->updateTable();
 
         scribbling = true;
     }
@@ -175,6 +178,90 @@ void FlyAR::removeLastItem(int objNum)
         objVec.erase(objVec.begin()+(objNum-1));
         --objCount;
     }
+}
+
+void FlyAR::editElement(int objNum)
+{
+    bool type, height, rad = false;
+
+    //This handles removing the look of the element currently
+    QColor currentPenColor = penColor();
+    setPenColor(Qt::white);
+    setPenWidth(20);
+    objRadius = objVec[objNum-1].radius*50.0f;
+    objType = objVec[objNum-1].type;
+    lastPoint.setX((objVec[objNum-1].x*40)+410-(objRadius/2));
+    lastPoint.setY(500+(objRadius/2)-(objVec[objNum-1].y*50));
+    drawObj(lastPoint);
+    setPenColor(currentPenColor);
+    setPenWidth(3);
+    // /This ends the handling of the removing the look of the element
+
+    //Now we update the element's values and redraw it
+    vector<QString> vec;//vector to get the int value to save
+    vec.push_back(tr("Circle"));
+    vec.push_back(tr("Square"));
+    vec.push_back(tr("Cow"));
+    vec.push_back(tr("Rocket"));
+    vec.push_back(tr("UT Shield"));
+    vec.push_back(tr("UT Rocket"));
+
+    QStringList objects;
+    objects << tr("Circle")
+            << tr("Square")
+            << tr("Cow")
+            << tr("Rocket")
+            << tr("UT Shield")
+            << tr("UT Rocket");
+
+    QString item = QInputDialog::getItem(this, tr("FlyAR"),tr("Object Type:"),objects,0,false,&type);
+
+    if (type)
+    {
+        for (unsigned int i = 1; i <= vec.size(); ++i)
+        {
+            if (vec.at(i-1) == item)
+            {
+                objType = i;
+                break;
+            }
+        }
+    } else objType = objVec[objNum-1].type;
+
+    QColor newColor = QColorDialog::getColor(myPenColor);
+    if (newColor.isValid()) setPenColor(newColor);
+
+    objHeight = QInputDialog::getInt(this, tr("FlyAR"),
+                                        tr("Height (1-10):"),
+                                        objVec[objNum-1].z,
+                                        1.0f, 10.0f, 1.0f, &height);
+
+    if (!height)
+    {
+        objHeight = objVec[objNum-1].z;
+    }
+
+    objRadius = QInputDialog::getInt(this, tr("FlyAR"),
+                                            tr("Radius (10-30): "),
+                                            objVec[objNum-1].radius,
+                                            10, 30, 2, &rad);
+    if (!rad) //if the user cancels at anytime, cancel the drawing of the object
+    {
+        objRadius = objVec[objNum-1].radius * 50.0f;
+    }
+
+    drawObj(lastPoint);
+
+    objVec[objNum-1].type = objType;
+    objVec[objNum-1].r = (myPenColor.rgb() >> 16) & 0xFF;
+    objVec[objNum-1].g = (myPenColor.rgb() >> 8) & 0xFF;
+    objVec[objNum-1].b = (myPenColor.rgb()) & 0xFF;
+    objVec[objNum-1].z = objHeight;
+    objVec[objNum-1].radius = (objRadius/50.0f);
+    modified = true;
+
+    ((MainWindow*)parent()->parent())->updateTable();
+
 }
 
 void FlyAR::removeElement()
