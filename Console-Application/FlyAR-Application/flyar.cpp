@@ -188,7 +188,7 @@ void FlyAR::editElement(int objNum)
     QColor currentPenColor = penColor();
     setPenColor(Qt::white);
     setPenWidth(20);
-    objRadius = objVec[objNum-1].radius*50.0f;
+    objRadius = (objVec[objNum-1].radius*50.0f);
     objType = objVec[objNum-1].type;
     lastPoint.setX((objVec[objNum-1].x*40)+410-(objRadius/2));
     lastPoint.setY(500+(objRadius/2)-(objVec[objNum-1].y*50));
@@ -243,7 +243,7 @@ void FlyAR::editElement(int objNum)
 
     objRadius = QInputDialog::getInt(this, tr("FlyAR"),
                                             tr("Radius (10-30): "),
-                                            objVec[objNum-1].radius,
+                                            (objVec[objNum-1].radius*50),
                                             10, 30, 2, &rad);
     if (!rad) //if the user cancels at anytime, cancel the drawing of the object
     {

@@ -145,18 +145,19 @@ void MainWindow::about()
                "be flying in.  It is assuming that your vehicle is facing outwards and "
                "is placed at the bottom center of the screen. </p>"
                "<p> To help you visualize the field. You can click the File option "
-               "in the menu bar and open an image file to show where the obstacles  "
+               "in the menu bar and open an image file (Google Earth) to show where the obstacles  "
                "would go from a top down sort of view.  When you click on the screen "
                "you will have to specify first what type of object you would like to show, "
                "and then add a value between 1-10 which represents the height of the object "
                "off the ground.  You will also have to specify the radius of the object "
                "that you selected. "
                "The data of each position will be stored in a comma separated file "
-               "who's location is specified by you, the user.</p>"
-               "<p>There are many options that are available from the application."
-               " Most of them are self explanatory. \nUndo last entry (removes the last entry on the board)."
-               "\nRemove Element allows you to splice out single elements anywhere on the table."
-               "is placed at the bottom center of the screen. </p>"));
+               "who's location is specified by you, the user. </p>"
+               "<p>There are many options that are available from the application. "
+               "Most of them are self explanatory. Undo last entry (removes the last entry on the board). "
+               "Remove Element allows you to splice out single elements anywhere on the table. "
+               "Edit element allows you to change the everything but the position of an element. "
+               "You can change pen color at any time, which will be applied to any element placed after the change. </p>"));
 }
 
 void MainWindow::createActions()
@@ -245,7 +246,7 @@ bool MainWindow::maybeSave()
 
 bool MainWindow::saveFile()
 {
-    QString initialPath = QDir::currentPath() + "/DataPoints.txt";
+    QString initialPath = QDir::currentPath() + "/config.txt";
 
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save As"),
                                initialPath,
